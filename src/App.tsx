@@ -9,13 +9,13 @@ import {
 import { useAppStore } from './store/useAppStore';
 import { AppShell } from './shell/AppShell';
 import { Home } from './screens/Home';
+import { Spaces } from './screens/Spaces';
+import { SpaceDetail } from './screens/SpaceDetail';
+import { Personal } from './screens/Personal';
 import { Onboarding } from './screens/Onboarding';
 import {
-  PersonalStub,
   ReportsStub,
   SettingsStub,
-  SpaceDetailStub,
-  SpacesStub,
 } from './screens/stubs';
 import { Gallery } from './screens/Gallery';
 
@@ -66,9 +66,9 @@ function Router() {
         }
       >
         <Route path="/" element={<Home />} />
-        <Route path="/spaces" element={<SpacesStub />} />
-        <Route path="/spaces/:id" element={<SpaceDetailStub />} />
-        <Route path="/personal/:who" element={<PersonalStub />} />
+        <Route path="/spaces" element={<Spaces />} />
+        <Route path="/spaces/:id" element={<SpaceDetail />} />
+        <Route path="/personal/:who" element={<Personal />} />
         <Route path="/reports" element={<ReportsStub />} />
         <Route path="/settings" element={<SettingsStub />} />
       </Route>

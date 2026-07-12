@@ -12,6 +12,7 @@ import { useAppStore } from '../store/useAppStore';
 import { monthLabel } from '../domain/format';
 import { AddEntryDialog } from '../dialogs/AddEntryDialog';
 import { NewSpaceDialog } from '../dialogs/NewSpaceDialog';
+import { SpaceSettingsDialog } from '../dialogs/SpaceSettingsDialog';
 import { useIsDesktop } from './useIsDesktop';
 import markUrl from '../assets/sprout-mark.svg';
 import './shell.css';
@@ -22,11 +23,11 @@ interface RouteMeta {
   title: string;
 }
 
-function routeMeta(pathname: string, month: string, personName?: string): RouteMeta {
+function routeMeta(pathname: string, month: string, personName?: string, spaceName?: string): RouteMeta {
   const label = monthLabel(month);
   if (pathname === '/reports') return { eyebrow: `Household · ${label}`, title: 'Reports' };
   if (pathname === '/settings') return { eyebrow: 'Household', title: 'Settings' };
-  if (pathname.startsWith('/spaces/')) return { eyebrow: label, title: 'Space' };
+  if (pathname.startsWith('/spaces/')) return { eyebrow: label, title: spaceName ?? 'Space' };
   if (pathname === '/spaces') return { eyebrow: `Household · ${label}`, title: 'Spaces' };
   if (pathname.startsWith('/personal/'))
     return { eyebrow: `Personal · ${label}`, title: `${personName ?? 'Personal'} · Personal` };
@@ -105,6 +106,7 @@ function MobileShell() {
       <MobileToast />
       <AddEntryDialog />
       <NewSpaceDialog />
+      <SpaceSettingsDialog />
     </div>
   );
 }
@@ -170,7 +172,11 @@ function DesktopShell() {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   const personName = personal.find((p) => pathname === `/personal/${p.id}`)?.name;
-  const meta = routeMeta(pathname, month, personName);
+  const spaceMatch = pathname.startsWith('/spaces/')
+    ? snapshot.spaces.find((s) => pathname === `/spaces/${s.id}`)
+    : undefined;
+  const openSpaceSettings = useAppStore((s) => s.openSpaceSettings);
+  const meta = routeMeta(pathname, month, personName, spaceMatch?.name);
 
   const NavItem = ({
     icon,
@@ -286,6 +292,14 @@ function DesktopShell() {
                 />
               ))}
             </div>
+            {spaceMatch && (
+              <IconButton
+                icon="settings"
+                label="Space settings"
+                variant="secondary"
+                onClick={() => openSpaceSettings(spaceMatch.id)}
+              />
+            )}
             <IconButton icon="search" label="Search" variant="secondary" />
             <IconButton icon="bell" label="Alerts" variant="secondary" />
             <Button iconStart="plus" onClick={() => openAddEntry()}>
@@ -300,6 +314,7 @@ function DesktopShell() {
 
       <AddEntryDialog />
       <NewSpaceDialog />
+      <SpaceSettingsDialog />
     </div>
   );
 }
