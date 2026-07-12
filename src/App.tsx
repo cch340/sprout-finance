@@ -26,6 +26,7 @@ import {
   Tooltip,
   iconNames,
 } from './design-system';
+import { useAppStore } from './store/useAppStore';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -56,9 +57,18 @@ export function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [seg, setSeg] = useState('3m');
 
+  // Phase 2 smoke wiring: boot the Dexie-backed store so the data layer is
+  // exercised (and bundled). Phase 3 replaces this gallery with real screens.
+  const bootStore = useAppStore((s) => s.boot);
+  const storeStatus = useAppStore((s) => s.status);
+  useEffect(() => {
+    void bootStore();
+  }, [bootStore]);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   }, [dark]);
+  void storeStatus;
 
   return (
     <div
