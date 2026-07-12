@@ -86,7 +86,12 @@ function MobileShell() {
   const addEntryContext = spaceMatch?.[1] ?? personalMatch?.[1];
 
   const tab = (id: string, icon: IconName, label: string, to: string) => (
-    <button className="m-tab" data-active={activeTab === id} onClick={() => navigate(to)}>
+    <button
+      className="m-tab"
+      data-active={activeTab === id}
+      aria-current={activeTab === id ? 'page' : undefined}
+      onClick={() => navigate(to)}
+    >
       <Icon name={icon} size={22} /> {label}
     </button>
   );
@@ -206,6 +211,7 @@ function DesktopShell() {
     <button
       className="nav-item"
       data-active={active || undefined}
+      aria-current={active ? 'page' : undefined}
       onClick={onClick ?? (to ? () => navigate(to) : undefined)}
       style={accent ? { color: 'var(--text-accent)' } : undefined}
     >

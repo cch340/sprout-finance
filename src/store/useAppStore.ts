@@ -105,7 +105,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsSpaceId: null,
 
   async boot() {
-    const snapshot = await repo.loadSnapshot();
+    let snapshot = await repo.loadSnapshot();
+    // Dev convenience: `?demo` seeds the sample ledger on a fresh install.
+    const wantsDemo =
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).has('demo');
+    if (wantsDemo && !snapshot.household.onboarded) {
+      snapshot = await repo.seedDemo(new Date());
+    }
     initTheme(snapshot.settings.theme);
     set({ snapshot, status: 'ready', month: isoMonth(new Date()) });
   },

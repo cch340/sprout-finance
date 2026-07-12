@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { IconButton } from './IconButton';
 
@@ -32,13 +32,57 @@ export function Dialog({
   style = {},
   ...rest
 }: DialogProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
+    // Remember what had focus so we can restore it on close.
+    const prevFocus = document.activeElement as HTMLElement | null;
+    // Move focus into the dialog (the container itself, so we don't auto-focus
+    // the first input — which would scroll the form) once mounted.
+    const card = cardRef.current;
+    card?.focus();
+
+    const focusables = () =>
+      Array.from(
+        card?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null || el === card);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') {
+        onClose?.();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      // Trap Tab within the dialog.
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        card?.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || active === card || !card?.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      // Restore focus to the trigger when the dialog closes.
+      prevFocus?.focus?.();
+    };
   }, [open, onClose]);
   if (!open) return null;
   const maxW = size === 'sm' ? 380 : size === 'lg' ? 640 : 500;
@@ -61,12 +105,15 @@ export function Dialog({
       }}
     >
       <div
+        ref={cardRef}
         role="dialog"
         aria-modal="true"
         aria-label={typeof title === 'string' ? title : undefined}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className={`sprout-dialog ${className}`}
         style={{
+          outline: 'none',
           width: '100%',
           maxWidth: maxW,
           background: 'var(--surface-card)',
