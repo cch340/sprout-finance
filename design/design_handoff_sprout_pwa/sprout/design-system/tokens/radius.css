@@ -1,0 +1,14 @@
+/* ============================================================
+   Sprout · Radius
+   Soft, friendly corners (8–12px default; larger for cards).
+   ============================================================ */
+
+:root {
+  --radius-xs:   4px;    /* tags, tiny chips */
+  --radius-sm:   8px;    /* inputs, small buttons */
+  --radius-md:   12px;   /* buttons, list rows */
+  --radius-lg:   16px;   /* cards */
+  --radius-xl:   20px;   /* sheets, large cards */
+  --radius-2xl:  28px;   /* modals, hero panels */
+  --radius-pill: 999px;  /* pills, switches, avatars */
+}
