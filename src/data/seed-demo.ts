@@ -4,7 +4,7 @@
 
 import { DEFAULT_SETTINGS, HOUSEHOLD_ID } from '../domain/types';
 import type {
-  Category, FieldDef, Household, RecurringItem, Settings, Snapshot, Space, Tx, TxDir, TxStatus,
+  Category, FieldDef, Household, RecurringItem, Settings, Snapshot, Space, SpaceKind, Tx, TxDir, TxStatus,
 } from '../domain/types';
 
 // ---- scoped categories & fields (verbatim from data.js) ------------------
@@ -53,15 +53,61 @@ const FIELDS: Record<string, FieldDef[]> = {
   personal: [{ key: 'vendor', label: 'Payee', type: 'text', primary: true }],
 };
 
-const SPACES: Space[] = [
-  { id: 'expenses', name: 'Everyday Expenses', short: 'Expenses', group: 'shared', icon: 'receipt', kind: 'spend', cats: CATS.expenses, fields: FIELDS.expenses, budget: 1500, sortOrder: 0 },
-  { id: 'housing', name: 'Housing', short: 'Housing', sub: 'TreeO', group: 'shared', icon: 'home', kind: 'spend', cats: CATS.housing, fields: FIELDS.housing, budget: 2100, sortOrder: 1 },
-  { id: 'car', name: 'Car', short: 'Car', group: 'shared', icon: 'repeat', kind: 'spend', cats: CATS.car, fields: FIELDS.car, budget: 800, sortOrder: 2 },
-  { id: 'investment', name: 'Investment', short: 'Invest', sub: 'AIA', group: 'shared', icon: 'trending-up', kind: 'invest', cats: CATS.investment, fields: FIELDS.investment, value: 12480, sortOrder: 3 },
+/**
+ * Space template — the reusable default definition for a kind of space
+ * (categories, fields, icon, a one-line description, whether it's on by
+ * default, and a suggested budget). Shared by the demo seed AND the real
+ * onboarding flow so the two never drift.
+ */
+export interface SpaceTemplate {
+  id: string;
+  name: string;
+  short?: string;
+  sub?: string;
+  icon: string;
+  kind: SpaceKind;
+  cats: Category[];
+  fields: FieldDef[];
+  /** One-line description for the onboarding toggle card. */
+  description: string;
+  /** Toggled on by default in onboarding. */
+  defaultOn: boolean;
+  /** Suggested monthly budget (spend spaces only). */
+  defaultBudget?: number;
+  baseBalance?: number;
+  value?: number;
+}
+
+export const SPACE_TEMPLATES: SpaceTemplate[] = [
+  { id: 'expenses', name: 'Everyday Expenses', short: 'Expenses', icon: 'receipt', kind: 'spend', cats: CATS.expenses, fields: FIELDS.expenses, description: 'Groceries, meals, baby & everyday buys', defaultOn: true, defaultBudget: 1500 },
+  { id: 'housing', name: 'Housing', short: 'Housing', sub: 'TreeO', icon: 'home', kind: 'spend', cats: CATS.housing, fields: FIELDS.housing, description: 'Rent or installment, utilities & bills', defaultOn: true, defaultBudget: 2100 },
+  { id: 'car', name: 'Car', short: 'Car', icon: 'repeat', kind: 'spend', cats: CATS.car, fields: FIELDS.car, description: 'Installment, road tax & maintenance', defaultOn: true, defaultBudget: 800 },
+  { id: 'investment', name: 'Investment', short: 'Invest', sub: 'AIA', icon: 'trending-up', kind: 'invest', cats: CATS.investment, fields: FIELDS.investment, description: 'Track contributions & portfolio value', defaultOn: false, value: 12480 },
   // baseBalance chosen so live balance = 7134.2 + (1500+1500) - (1450+264.2) = 8420.
-  { id: 'joint', name: 'Joint Fund', short: 'Joint', group: 'shared', icon: 'wallet', kind: 'fund', cats: [], fields: FIELDS.joint, baseBalance: 7134.2, sortOrder: 4 },
-  { id: 'jc', name: 'JC', group: 'personal', icon: 'user', kind: 'personal', cats: CATS.personal, fields: FIELDS.personal, sortOrder: 5 },
-  { id: 'ch', name: 'CH', group: 'personal', icon: 'user', kind: 'personal', cats: CATS.personal, fields: FIELDS.personal, sortOrder: 6 },
+  { id: 'joint', name: 'Joint Fund', short: 'Joint', icon: 'wallet', kind: 'fund', cats: [], fields: FIELDS.joint, description: 'Shared pot you both top up', defaultOn: true, baseBalance: 7134.2 },
+];
+
+/** Build a shared Space from a template (demo keeps sub/value/baseBalance). */
+export function templateToSpace(t: SpaceTemplate, sortOrder: number): Space {
+  return {
+    id: t.id, name: t.name, short: t.short, sub: t.sub, group: 'shared',
+    icon: t.icon, kind: t.kind, cats: t.cats, fields: t.fields,
+    budget: t.defaultBudget, baseBalance: t.baseBalance, value: t.value, sortOrder,
+  };
+}
+
+/** Build a personal space (id === person id) with the standard personal cats/fields. */
+export function personalSpace(id: string, name: string, sortOrder: number): Space {
+  return {
+    id, name, group: 'personal', icon: 'user', kind: 'personal',
+    cats: CATS.personal, fields: FIELDS.personal, sortOrder,
+  };
+}
+
+const SPACES: Space[] = [
+  ...SPACE_TEMPLATES.map((t, i) => templateToSpace(t, i)),
+  personalSpace('jc', 'JC', 5),
+  personalSpace('ch', 'CH', 6),
 ];
 
 const RECURRING_SRC: Array<Omit<RecurringItem, 'id'>> = [

@@ -13,10 +13,8 @@ import { Spaces } from './screens/Spaces';
 import { SpaceDetail } from './screens/SpaceDetail';
 import { Personal } from './screens/Personal';
 import { Onboarding } from './screens/Onboarding';
-import {
-  ReportsStub,
-  SettingsStub,
-} from './screens/stubs';
+import { Reports } from './screens/Reports';
+import { Settings } from './screens/Settings';
 import { Gallery } from './screens/Gallery';
 
 function Splash() {
@@ -69,8 +67,8 @@ function Router() {
         <Route path="/spaces" element={<Spaces />} />
         <Route path="/spaces/:id" element={<SpaceDetail />} />
         <Route path="/personal/:who" element={<Personal />} />
-        <Route path="/reports" element={<ReportsStub />} />
-        <Route path="/settings" element={<SettingsStub />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

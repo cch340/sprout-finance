@@ -156,6 +156,96 @@ export function history(
   return points;
 }
 
+// ---- range-aware roll-ups (Reports) --------------------------------------
+// A "range" is the last N calendar months including the current one. These
+// mirror the single-month selectors above but aggregate across the range.
+
+/** Last n calendar months (incl. current), oldest first, as yyyy-mm. */
+export function monthsInRange(n: number, ref: Date = new Date()): string[] {
+  const out: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    out.push(isoMonth(new Date(ref.getFullYear(), ref.getMonth() - i, 1)));
+  }
+  return out;
+}
+
+const inMonths = (t: Tx, months: Set<string>): boolean => months.has(t.date.slice(0, 7));
+
+/** Sum of non-income tx for a space across a set of months (fund out = 0). */
+function spentOfRange(space: Space, txs: Tx[], months: Set<string>): number {
+  return txs
+    .filter((t) => t.spaceId === space.id && inMonths(t, months) && t.dir !== 'in')
+    .reduce((sum, t) => sum + (t.dir === 'out' && space.kind === 'fund' ? 0 : t.amount), 0);
+}
+
+/** Per-space spend totals across shared spend spaces over a month range. */
+export function spendBySpaceRange(spaces: Space[], txs: Tx[], months: string[]): SpaceSpend[] {
+  const set = new Set(months);
+  return spendSpaces(spaces).map((s) => ({
+    id: s.id, name: s.name, short: s.short, icon: s.icon, value: spentOfRange(s, txs, set),
+  }));
+}
+
+/** Spend grouped by payer bucket (Joint / person names) over a month range. */
+export function spendByPersonRange(
+  spaces: Space[],
+  txs: Tx[],
+  months: string[],
+): Record<string, number> {
+  const set = new Set(months);
+  const out: Record<string, number> = {};
+  for (const space of spendSpaces(spaces)) {
+    for (const t of txs) {
+      if (t.spaceId !== space.id || !inMonths(t, set) || t.dir === 'in') continue;
+      const key = t.payer ?? 'Joint';
+      out[key] = (out[key] ?? 0) + t.amount;
+    }
+  }
+  return out;
+}
+
+/** For one payer, their spend per shared spend space over a range (non-zero only). */
+export function payerSpaceBreakdown(
+  spaces: Space[],
+  txs: Tx[],
+  months: string[],
+  payer: string,
+): SpaceSpend[] {
+  const set = new Set(months);
+  return spendSpaces(spaces)
+    .map((s) => ({
+      id: s.id,
+      name: s.short ?? s.name,
+      short: s.short,
+      icon: s.icon,
+      value: txs
+        .filter((t) => t.spaceId === s.id && inMonths(t, set) && t.dir !== 'in' && (t.payer ?? 'Joint') === payer)
+        .reduce((a, t) => a + t.amount, 0),
+    }))
+    .filter((x) => x.value > 0);
+}
+
+/** Top spending categories across shared spend spaces over a range. */
+export function topCategoriesRange(
+  spaces: Space[],
+  txs: Tx[],
+  months: string[],
+  limit = 5,
+): CategorySpend[] {
+  const set = new Set(months);
+  const agg = new Map<string, CategorySpend>();
+  for (const space of spendSpaces(spaces)) {
+    const labelOf = (cat: string) => space.cats.find((c) => c.key === cat)?.label ?? cat;
+    for (const t of txs) {
+      if (t.spaceId !== space.id || !inMonths(t, set) || t.dir === 'in') continue;
+      const cur = agg.get(t.cat);
+      if (cur) cur.value += t.amount;
+      else agg.set(t.cat, { cat: t.cat, label: labelOf(t.cat), value: t.amount });
+    }
+  }
+  return [...agg.values()].sort((a, b) => b.value - a.value).slice(0, limit);
+}
+
 /** Non-primary fields of a space (shown as secondary row detail). */
 export function secondaryFields(space: Space) {
   return (space.fields ?? []).filter((f) => !f.primary);

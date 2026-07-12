@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed-demo';
 import { isoMonth } from './format';
 import {
-  fundBalance, history, incomeOf, spendByPerson, spentOf, topCategories,
+  fundBalance, history, incomeOf, monthsInRange, payerSpaceBreakdown, spendByPerson,
+  spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
   totalBudget, totalSpent,
 } from './selectors';
 import type { Space } from './types';
@@ -83,5 +84,37 @@ describe('demo month mapping & history', () => {
     // prior months carry the synthetic aggregates (non-zero, ~history totals)
     expect(series[0].value).toBeCloseTo(4310, 0);
     expect(series[4].value).toBeCloseTo(4980, 0);
+  });
+});
+
+describe('range-aware reports selectors', () => {
+  it('monthsInRange returns the last n months incl current, oldest first', () => {
+    expect(monthsInRange(3, REF)).toEqual(['2026-05', '2026-06', '2026-07']);
+    expect(monthsInRange(6, REF)[0]).toBe('2026-02');
+  });
+
+  it('a single-month range equals the single-month selectors', () => {
+    expect(spendByPersonRange(snap.spaces, snap.txs, [MONTH])).toEqual(
+      spendByPerson(snap.spaces, snap.txs, MONTH),
+    );
+    expect(topCategoriesRange(snap.spaces, snap.txs, [MONTH])).toEqual(
+      topCategories(snap.spaces, snap.txs, MONTH),
+    );
+  });
+
+  it('spendBySpaceRange over 6 months sums to the history total', () => {
+    const months = monthsInRange(6, REF);
+    const bySpace = spendBySpaceRange(snap.spaces, snap.txs, months);
+    const rangeSum = bySpace.reduce((a, s) => a + s.value, 0);
+    const historySum = history(snap.spaces, snap.txs, 6, REF).reduce((a, h) => a + h.value, 0);
+    expect(rangeSum).toBeCloseTo(historySum, 2);
+  });
+
+  it('payerSpaceBreakdown yields non-zero per-space rows for a payer', () => {
+    const rows = payerSpaceBreakdown(snap.spaces, snap.txs, [MONTH], 'JC');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) expect(r.value).toBeGreaterThan(0);
+    // JC's current-month total across spaces matches spendByPerson.JC (966).
+    expect(rows.reduce((a, r) => a + r.value, 0)).toBeCloseTo(966, 2);
   });
 });
