@@ -1,0 +1,220 @@
+/* Sprout app shell — mobile chrome + desktop sidebar layout.
+   Class names and values ported from the design handoff prototypes
+   (Sprout Mobile.dc.html / Sprout Desktop.dc.html + desktop-app.jsx). */
+
+/* ---- shared ---- */
+.sprout-app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--surface-canvas);
+  color: var(--text-body);
+}
+
+/* ============================================================
+   MOBILE  (< 900px)
+   ============================================================ */
+.app-mobile {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface-canvas);
+}
+.m-utilbar {
+  height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 8px;
+}
+.m-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 20px 120px;
+}
+.m-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 84px;
+  background: color-mix(in srgb, var(--surface-card) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  padding-top: 12px;
+  z-index: 40;
+}
+.m-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: var(--font-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-subtle);
+  width: 64px;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+.m-tab[data-active='true'] {
+  color: var(--accent);
+}
+.m-fab {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(79 138 107 / 0.42);
+  margin-top: -18px;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.m-fab:active {
+  transform: scale(0.92);
+}
+.m-toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 100px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 50;
+}
+.m-toast > * {
+  pointer-events: auto;
+}
+
+/* ============================================================
+   DESKTOP  (>= 900px)
+   ============================================================ */
+.app-desktop {
+  --sidebar-w: 264px;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  height: 100vh;
+  height: 100dvh;
+}
+.sidebar {
+  background: var(--surface-card);
+  border-right: 1px solid var(--border-subtle);
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: var(--font-h3);
+  font-weight: var(--fw-extra);
+  color: var(--text-strong);
+  letter-spacing: var(--tracking-snug);
+  padding: 0 6px;
+}
+.navlabel {
+  font: var(--font-caption);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-subtle);
+  padding: 0 12px;
+  margin-bottom: 6px;
+}
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-md);
+  font: var(--font-label);
+  font-size: var(--text-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+  width: 100%;
+}
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-body);
+}
+.nav-item[data-active='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-soft-fg);
+}
+.nav-item .nav-sub {
+  margin-left: auto;
+  font-style: normal;
+  font: var(--font-caption);
+  color: var(--text-subtle);
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+  gap: var(--space-4);
+}
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  align-items: start;
+}
