@@ -79,6 +79,12 @@ function MobileShell() {
         ? 'settings'
         : 'home';
 
+  // Preselect a space in Add-entry when the FAB is pressed from a space /
+  // personal screen (route id === space id for both shared and personal).
+  const spaceMatch = pathname.match(/^\/spaces\/([^/]+)/);
+  const personalMatch = pathname.match(/^\/personal\/([^/]+)/);
+  const addEntryContext = spaceMatch?.[1] ?? personalMatch?.[1];
+
   const tab = (id: string, icon: IconName, label: string, to: string) => (
     <button className="m-tab" data-active={activeTab === id} onClick={() => navigate(to)}>
       <Icon name={icon} size={22} /> {label}
@@ -97,7 +103,7 @@ function MobileShell() {
       <nav className="m-tabbar">
         {tab('home', 'home', 'Home', '/')}
         {tab('spaces', 'wallet', 'Spaces', '/spaces')}
-        <button className="m-fab" aria-label="Add entry" onClick={() => openAddEntry()}>
+        <button className="m-fab" aria-label="Add entry" onClick={() => openAddEntry(addEntryContext)}>
           <Icon name="plus" size={26} strokeWidth={2.4} />
         </button>
         {tab('reports', 'pie-chart', 'Reports', '/reports')}
@@ -171,10 +177,12 @@ function DesktopShell() {
     .filter((s) => s.kind === 'personal')
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
-  const personName = personal.find((p) => pathname === `/personal/${p.id}`)?.name;
+  const personMatch = personal.find((p) => pathname === `/personal/${p.id}`);
+  const personName = personMatch?.name;
   const spaceMatch = pathname.startsWith('/spaces/')
     ? snapshot.spaces.find((s) => pathname === `/spaces/${s.id}`)
     : undefined;
+  const addEntryContext = spaceMatch?.id ?? personMatch?.id;
   const openSpaceSettings = useAppStore((s) => s.openSpaceSettings);
   const meta = routeMeta(pathname, month, personName, spaceMatch?.name);
 
@@ -302,7 +310,7 @@ function DesktopShell() {
             )}
             <IconButton icon="search" label="Search" variant="secondary" />
             <IconButton icon="bell" label="Alerts" variant="secondary" />
-            <Button iconStart="plus" onClick={() => openAddEntry()}>
+            <Button iconStart="plus" onClick={() => openAddEntry(addEntryContext)}>
               Add entry
             </Button>
           </div>

@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import * as repo from '../data/repo';
-import { isoMonth } from '../domain/format';
+import { formatMoney, isoMonth } from '../domain/format';
 import { applyTheme, initTheme, nextTheme } from './theme';
 import {
   DEFAULT_HOUSEHOLD, DEFAULT_SETTINGS,
@@ -144,7 +144,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     };
     await repo.addTx(tx);
     set({ snapshot: { ...snapshot, txs: [tx, ...snapshot.txs] } });
-    const sub = dir === 'in' ? `Income · ${title}` : title;
+    const money = formatMoney(input.amount, { currency: snapshot.settings.currency });
+    const sub = `${money} · ${title}`;
     get().showToast(dir === 'in' ? 'Income added' : 'Entry added', sub);
     return tx;
   },
