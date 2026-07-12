@@ -1,0 +1,11 @@
+/* ============================================================
+   Sprout · Fonts
+   Figtree — humanist sans, warm & highly readable (UI + display).
+   Spline Sans Mono — optional tabular figures / code.
+
+   NOTE: linked from Google Fonts CDN. For a production PWA,
+   self-host the .woff2 files and replace this @import with
+   local @font-face rules so the app works fully offline.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Spline+Sans+Mono:wght@400;500;600&display=swap');

@@ -1,0 +1,130 @@
+/* ============================================================
+   Sprout · Colors
+   Meadow palette — cool cream, warm-neutral ink, sage accent.
+   Base ramps first, then semantic aliases.
+   ============================================================ */
+
+:root {
+  /* ---- Sage (primary accent) ---------------------------------- */
+  --sage-50:  #EEF4F0;
+  --sage-100: #DDE9E1;
+  --sage-200: #BCD3C6;
+  --sage-300: #97BCA8;
+  --sage-400: #6FAE8A;   /* light leaf */
+  --sage-500: #4F8A6B;   /* PRIMARY */
+  --sage-600: #3F7357;   /* hover */
+  --sage-700: #345E48;   /* active / pressed */
+  --sage-800: #2A4B3A;
+  --sage-900: #1F3A2C;
+
+  /* ---- Neutral (warm, faintly green-tinted) ------------------- */
+  --neutral-0:   #FFFFFF;
+  --neutral-50:  #F7F8F4;
+  --neutral-100: #F4F5F1;   /* app canvas */
+  --neutral-150: #EDEFE8;
+  --neutral-200: #E2E6DD;   /* hairline / border */
+  --neutral-300: #CDD2C7;
+  --neutral-400: #A9AFA1;
+  --neutral-500: #858B7C;   /* muted text */
+  --neutral-600: #676D5F;
+  --neutral-700: #4A4F43;
+  --neutral-800: #333730;
+  --neutral-900: #25291F;   /* ink */
+
+  /* ---- Semantic signal colors --------------------------------- */
+  /* Income / positive — a fresh green, distinct from the sage brand */
+  --income-50:  #E7F3EC;
+  --income-500: #2E8B60;
+  --income-600: #24704D;
+  /* Expense / negative / danger — warm terracotta-red (on-brand warmth) */
+  --danger-50:  #FBEDEA;
+  --danger-500: #C7503F;
+  --danger-600: #A83E30;
+  /* Warning — honey amber (the Meadow secondary) */
+  --warning-50:  #FBF1DF;
+  --warning-500: #D98A3D;
+  --warning-600: #B26E28;
+  /* Info — muted, trustworthy blue */
+  --info-50:  #E9F0F5;
+  --info-500: #3E7CA8;
+  --info-600: #305F82;
+
+  /* ---- Category tints (soft chip backgrounds + inks) ---------- */
+  --cat-house-bg:    #E9F0EA;  --cat-house-fg:    #4F8A6B;
+  --cat-food-bg:     #FBF1DF;  --cat-food-fg:     #B26E28;
+  --cat-car-bg:      #E9F0F5;  --cat-car-fg:      #3E7CA8;
+  --cat-baby-bg:     #F5EBF0;  --cat-baby-fg:     #A05780;
+  --cat-bills-bg:    #FBEDEA;  --cat-bills-fg:    #C7503F;
+  --cat-shopping-bg: #EFEDF6;  --cat-shopping-fg: #6C63A6;
+
+  /* ============================================================
+     SEMANTIC ALIASES — always reference these in components.
+     ============================================================ */
+
+  /* Backgrounds & surfaces */
+  --surface-canvas:      var(--neutral-100);   /* app background */
+  --surface-card:        var(--neutral-0);     /* cards, sheets */
+  --surface-raised:      var(--neutral-0);     /* menus, popovers */
+  --surface-sunken:      var(--neutral-50);    /* wells, insets */
+  --surface-hover:       var(--neutral-100);
+  --surface-inverse:     var(--neutral-900);
+
+  /* Text */
+  --text-strong:   var(--neutral-900);   /* headings, amounts */
+  --text-body:     var(--neutral-800);   /* default copy */
+  --text-muted:    var(--neutral-500);   /* labels, meta */
+  --text-subtle:   var(--neutral-400);   /* placeholders */
+  --text-on-accent:var(--neutral-0);
+  --text-on-inverse:var(--neutral-0);
+  --text-accent:   var(--sage-600);
+
+  /* Borders */
+  --border-subtle: var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --border-accent: var(--sage-500);
+  --ring-focus:    var(--sage-400);
+
+  /* Brand / interactive */
+  --accent:          var(--sage-500);
+  --accent-hover:    var(--sage-600);
+  --accent-active:   var(--sage-700);
+  --accent-soft:     var(--sage-100);
+  --accent-soft-fg:  var(--sage-700);
+
+  /* Money semantics */
+  --money-in:   var(--income-500);
+  --money-out:  var(--text-strong);   /* expenses render neutral, not alarming */
+  --money-over: var(--danger-500);    /* over-budget only */
+}
+
+/* ============================================================
+   Dark scope — opt-in via [data-theme="dark"].
+   Light is the default/primary mode.
+   ============================================================ */
+[data-theme="dark"] {
+  --surface-canvas:  #161A14;
+  --surface-card:    #1E241B;
+  --surface-raised:  #232A1F;
+  --surface-sunken:  #14180F;
+  --surface-hover:   #232A1F;
+  --surface-inverse: var(--neutral-50);
+
+  --text-strong:    #EEF1E9;
+  --text-body:      #D7DCCF;
+  --text-muted:     #9BA28E;
+  --text-subtle:    #6E7563;
+  --text-on-inverse:var(--neutral-900);
+  --text-accent:    var(--sage-400);
+
+  --border-subtle:  #2E352A;
+  --border-strong:  #3C4436;
+
+  --accent:         var(--sage-400);
+  --accent-hover:   var(--sage-300);
+  --accent-active:  var(--sage-200);
+  --accent-soft:    #26311F;
+  --accent-soft-fg: var(--sage-300);
+
+  --money-in:       #5FB98A;
+  --money-out:      var(--text-strong);
+}

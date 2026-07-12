@@ -1,0 +1,55 @@
+/* ============================================================
+   Sprout · Typography
+   Figtree everywhere. Amounts use tabular-nums.
+   Modular scale ~1.2 (minor third), 16px base.
+   ============================================================ */
+
+:root {
+  /* ---- Families ------------------------------------------------ */
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ---- Weights ------------------------------------------------- */
+  --fw-regular:  400;  /* @kind font */
+  --fw-medium:   500;  /* @kind font */
+  --fw-semibold: 600;  /* @kind font */
+  --fw-bold:     700;  /* @kind font */
+  --fw-extra:    800;  /* @kind font */
+
+  /* ---- Size ramp (px in rem) ----------------------------------- */
+  --text-2xs: 0.6875rem;  /* 11 — micro labels */
+  --text-xs:  0.75rem;    /* 12 */
+  --text-sm:  0.8125rem;  /* 13 — meta, captions */
+  --text-md:  0.9375rem;  /* 15 — body / UI default */
+  --text-lg:  1.0625rem;  /* 17 */
+  --text-xl:  1.25rem;    /* 20 — card titles */
+  --text-2xl: 1.5rem;     /* 24 — section heads */
+  --text-3xl: 1.875rem;   /* 30 */
+  --text-4xl: 2.375rem;   /* 38 — hero amounts */
+  --text-5xl: 3rem;       /* 48 */
+  --text-6xl: 3.75rem;    /* 60 — marketing display */
+
+  /* ---- Line heights -------------------------------------------- */
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  /* ---- Tracking ------------------------------------------------ */
+  --tracking-tight:  -0.03em;   /* large display / amounts */
+  --tracking-snug:   -0.015em;  /* headings */
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;    /* eyebrows / uppercase labels */
+
+  /* ---- Semantic role tokens ------------------------------------ */
+  --font-display: var(--fw-extra) var(--text-4xl)/var(--leading-tight) var(--font-sans);
+  --font-h1:      var(--fw-extra) var(--text-3xl)/var(--leading-tight) var(--font-sans);
+  --font-h2:      var(--fw-bold) var(--text-2xl)/var(--leading-snug) var(--font-sans);
+  --font-h3:      var(--fw-bold) var(--text-xl)/var(--leading-snug) var(--font-sans);
+  --font-body:    var(--fw-regular) var(--text-md)/var(--leading-normal) var(--font-sans);
+  --font-label:   var(--fw-semibold) var(--text-sm)/var(--leading-snug) var(--font-sans);
+  --font-caption: var(--fw-medium) var(--text-xs)/var(--leading-snug) var(--font-sans);
+
+  /* Amounts: tabular figures. Apply font-variant-numeric: tabular-nums alongside. */
+  --font-amount:  var(--fw-extra) var(--text-4xl)/var(--leading-tight) var(--font-sans);
+}

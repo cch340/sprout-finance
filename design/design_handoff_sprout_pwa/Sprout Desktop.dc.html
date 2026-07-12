@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="sprout/design-system/tokens/fonts.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/colors.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/typography.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/spacing.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/radius.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/shadow.css">
+<link rel="stylesheet" href="sprout/design-system/tokens/motion.css">
+<link rel="stylesheet" href="sprout/design-system/styles.css">
+<script src="sprout/design-system/_ds_bundle.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); background: var(--surface-canvas); }
+  a { color: var(--text-accent); }
+  a:hover { color: var(--accent-hover); }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+
+  .app { --sidebar-w: 264px; display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100vh; }
+  .sidebar { background: var(--surface-card); border-right: 1px solid var(--border-subtle); padding: var(--space-5) var(--space-4);
+    display: flex; flex-direction: column; gap: var(--space-5); overflow-y: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; font: var(--font-h3); font-weight: var(--fw-extra);
+    color: var(--text-strong); letter-spacing: var(--tracking-snug); padding: 0 6px; }
+  .navlabel { font: var(--font-caption); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: var(--tracking-wide);
+    color: var(--text-subtle); padding: 0 12px; margin-bottom: 6px; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: none; background: none;
+    border-radius: var(--radius-md); font: var(--font-label); font-size: var(--text-md); color: var(--text-muted);
+    cursor: pointer; text-align: left; transition: var(--transition-colors); width: 100%; }
+  .nav-item:hover { background: var(--surface-hover); color: var(--text-body); }
+  .nav-item[data-active="true"] { background: var(--accent-soft); color: var(--accent-soft-fg); }
+  .account { display: flex; align-items: center; gap: 10px; padding: 10px 8px;
+    border-top: 1px solid var(--border-subtle); }
+  .main { display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: var(--space-5) var(--space-7);
+    border-bottom: 1px solid var(--border-subtle); background: var(--surface-canvas); }
+  .scroll { flex: 1; overflow-y: auto; padding: var(--space-6) var(--space-7); display: flex; flex-direction: column; gap: var(--space-6); }
+  .row-3 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4); }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: start; }
+</style>
+</helmet>
+<x-import component-from-global-scope="DesktopApp" from="sprout/desktop-app.jsx" hint-size="100%,100%"></x-import>
+</x-dc>
+</body>
+</html>
