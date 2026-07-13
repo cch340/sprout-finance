@@ -116,10 +116,15 @@ export function Dialog({
           outline: 'none',
           width: '100%',
           maxWidth: maxW,
+          // Cap height so tall forms never run off-screen; dvh keeps it honest
+          // under iOS Safari's dynamic toolbar. Body scrolls, header/footer stay.
+          maxHeight: 'min(85dvh, 760px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
           background: 'var(--surface-card)',
           borderRadius: 'var(--radius-2xl)',
           boxShadow: 'var(--shadow-xl)',
-          padding: 'var(--space-6)',
           animation: 'sprout-rise var(--dur-base) var(--ease-out)',
           ...style,
         }}
@@ -128,11 +133,14 @@ export function Dialog({
         {(title || onClose) && (
           <div
             style={{
+              flexShrink: 0,
               display: 'flex',
               alignItems: 'flex-start',
               justifyContent: 'space-between',
               gap: 'var(--space-4)',
-              marginBottom: description ? 'var(--space-2)' : 'var(--space-4)',
+              padding: `var(--space-6) var(--space-6) ${
+                description ? 'var(--space-2)' : 'var(--space-4)'
+              }`,
             }}
           >
             {title && (
@@ -152,25 +160,40 @@ export function Dialog({
             )}
           </div>
         )}
-        {description && (
-          <p
-            style={{
-              font: 'var(--font-body)',
-              color: 'var(--text-muted)',
-              margin: '0 0 var(--space-5)',
-            }}
-          >
-            {description}
-          </p>
-        )}
-        {children}
+        <div
+          className="sprout-dialog-body"
+          style={{
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            padding: `0 var(--space-6) ${
+              footer ? 'var(--space-2)' : 'calc(var(--space-6) + env(safe-area-inset-bottom))'
+            }`,
+          }}
+        >
+          {description && (
+            <p
+              style={{
+                font: 'var(--font-body)',
+                color: 'var(--text-muted)',
+                margin: '0 0 var(--space-5)',
+              }}
+            >
+              {description}
+            </p>
+          )}
+          {children}
+        </div>
         {footer && (
           <div
             style={{
+              flexShrink: 0,
               display: 'flex',
               justifyContent: 'flex-end',
               gap: 'var(--space-3)',
-              marginTop: 'var(--space-6)',
+              padding: `var(--space-4) var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom))`,
             }}
           >
             {footer}

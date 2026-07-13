@@ -9,6 +9,7 @@ import {
   Switch,
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
+import { isoToday } from '../domain/format';
 import type { FieldDef, Space, TxDir } from '../domain/types';
 
 /**
@@ -122,6 +123,7 @@ export function AddEntryDialog() {
   const [fieldVals, setFieldVals] = useState<Record<string, string>>({});
   const [payer, setPayer] = useState('Joint');
   const [note, setNote] = useState('');
+  const [date, setDate] = useState(isoToday());
   const [recurring, setRecurring] = useState(false);
   const [showError, setShowError] = useState(false);
   // Bump to re-mount field inputs whenever the space changes (resets local state).
@@ -141,6 +143,7 @@ export function AddEntryDialog() {
     setFieldVals({});
     setPayer('Joint');
     setNote('');
+    setDate(isoToday());
     setRecurring(false);
     setShowError(false);
     setFieldKey((k) => k + 1);
@@ -178,6 +181,7 @@ export function AddEntryDialog() {
       payer: isPersonal ? undefined : payer,
       note: note.trim(),
       title,
+      date,
       fieldValues: { ...fieldVals },
     });
     if (recurring) {
@@ -289,6 +293,15 @@ export function AddEntryDialog() {
           placeholder="Anything to remember?"
           value={note}
           onChange={(e) => setNote(e.target.value)}
+        />
+
+        <Input
+          label="Date"
+          type="date"
+          value={date}
+          max={isoToday()}
+          required
+          onChange={(e) => setDate(e.target.value || isoToday())}
         />
 
         <Switch
