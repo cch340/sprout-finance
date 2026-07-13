@@ -1,0 +1,26 @@
+/* ============================================================
+   Sprout · Elevation
+   Soft, low-spread, green-tinted shadows. Nothing harsh —
+   surfaces float gently on the cream canvas.
+   ============================================================ */
+
+:root {
+  /* Shadow color is warm-green ink at low alpha */
+  --shadow-color: 37 41 31;   /* rgb of --neutral-900, used with alpha */
+
+  --shadow-xs: 0 1px 2px rgb(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 2px rgb(var(--shadow-color) / 0.05),
+               0 2px 6px rgb(var(--shadow-color) / 0.05);
+  --shadow-md: 0 1px 2px rgb(var(--shadow-color) / 0.05),
+               0 8px 24px rgb(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 2px 4px rgb(var(--shadow-color) / 0.05),
+               0 16px 40px rgb(var(--shadow-color) / 0.09);
+  --shadow-xl: 0 4px 8px rgb(var(--shadow-color) / 0.06),
+               0 28px 64px rgb(var(--shadow-color) / 0.12);
+
+  /* Focus ring (paired with --ring-focus color) */
+  --shadow-focus: 0 0 0 3px rgb(79 138 107 / 0.28);
+
+  /* Inset well */
+  --shadow-inset: inset 0 1px 2px rgb(var(--shadow-color) / 0.06);
+}
