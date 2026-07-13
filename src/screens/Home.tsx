@@ -381,7 +381,7 @@ function DesktopOverview() {
                   key={c.id}
                   leading={<CategoryIcon category={c.cat} />}
                   title={c.title}
-                  subtitle={`Paid by ${c.payer ?? 'Joint'}`}
+                  subtitle={`Paid by ${c.payer || 'Unspecified'}`}
                   trailing={<Amount value={c.amount} />}
                   meta={billBadge(c)}
                   divider={i < bills.length - 1}

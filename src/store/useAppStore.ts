@@ -33,6 +33,12 @@ export interface NewEntryInput {
   fieldValues?: Record<string, string>;
   status?: Tx['status'];
   date?: string;
+  /**
+   * When set to a fund space's id, the entry is "paid from" that fund: a linked
+   * mirror `dir:'out'` tx is written into the fund's ledger so its balance drops
+   * by the same amount. Ignored if the id isn't a fund or is the entry's own space.
+   */
+  paidFromFundId?: string;
 }
 
 const TOAST_MS = 3200;
@@ -136,21 +142,54 @@ export const useAppStore = create<AppState>((set, get) => ({
     const fieldValues = input.fieldValues ?? {};
     const title =
       input.title || fieldValues.vendor || input.note || input.cat || 'Entry';
+    const date = input.date ?? new Date().toISOString().slice(0, 10);
+    const originId = repo.newId('tx');
+
+    // "Paid from a fund": mirror the spend as a fund withdrawal, linked to the
+    // origin so fund balance (base + in − out) reflects it. Guard against a fund
+    // paying from itself.
+    const fund = input.paidFromFundId
+      ? snapshot.spaces.find(
+          (s) => s.id === input.paidFromFundId && s.kind === 'fund' && s.id !== input.spaceId,
+        )
+      : undefined;
+    const linkId = fund ? originId : undefined;
+
     const tx: Tx = {
-      id: repo.newId('tx'),
+      id: originId,
       spaceId: input.spaceId,
       title,
       fieldValues,
       note: input.note ?? '',
       cat: input.cat,
       amount: input.amount,
-      date: input.date ?? new Date().toISOString().slice(0, 10),
+      date,
       payer: space?.group === 'personal' ? undefined : input.payer ?? 'Joint',
       dir,
       status: input.status,
+      linkId,
+      linkSpaceId: fund?.id,
     };
     await repo.addTx(tx);
-    set({ snapshot: { ...snapshot, txs: [tx, ...snapshot.txs] } });
+    const added: Tx[] = [tx];
+    if (fund) {
+      const mirror: Tx = {
+        id: repo.newId('tx'),
+        spaceId: fund.id,
+        title,
+        fieldValues: {},
+        note: `Paid from fund · ${space?.name ?? ''}`,
+        cat: fund.cats[0]?.key ?? 'other',
+        amount: input.amount,
+        date,
+        dir: 'out',
+        linkId,
+        linkSpaceId: input.spaceId,
+      };
+      await repo.addTx(mirror);
+      added.unshift(mirror);
+    }
+    set({ snapshot: { ...snapshot, txs: [...added, ...snapshot.txs] } });
     const money = formatMoney(input.amount, { currency: snapshot.settings.currency });
     const sub = `${money} · ${title}`;
     get().showToast(dir === 'in' ? 'Income added' : 'Entry added', sub);

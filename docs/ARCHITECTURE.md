@@ -52,7 +52,7 @@ src/
 ## Domain model (TypeScript)
 ```ts
 type SpaceKind = 'spend' | 'fund' | 'invest' | 'personal';
-interface FieldDef { key: string; label: string; type: 'text' | 'select'; primary?: boolean; options?: string[]; placeholder?: string }
+interface FieldDef { key: string; label: string; type: 'text' | 'select' | 'date' | 'number'; primary?: boolean; options?: string[]; placeholder?: string }
 interface Category { key: string; label: string }
 interface Space { id: string; name: string; short?: string; sub?: string; group: 'shared' | 'personal';
   icon: string; kind: SpaceKind; cats: Category[]; fields: FieldDef[];
@@ -60,9 +60,21 @@ interface Space { id: string; name: string; short?: string; sub?: string; group:
 interface RecurringItem { id: string; spaceId: string; label: string; cat: string; amount: number }
 interface Tx { id: string; spaceId: string; title: string; fieldValues: Record<string, string>;
   note: string; cat: string; amount: number; date: string /* ISO yyyy-mm-dd */;
-  payer?: 'Joint' | string; dir: 'in' | 'out'; status?: 'paid' | 'due' }
+  payer?: 'Joint' | string; dir: 'in' | 'out'; status?: 'paid' | 'due';
+  linkId?: string; linkSpaceId?: string /* fund "paid from" pairing */ }
 interface Household { people: { id: string; name: string }[]; currency: string; onboarded: boolean }
 ```
+- **Custom field values are always strings** in `Tx.fieldValues`, keyed by `FieldDef.key`.
+  `date` fields hold an ISO `yyyy-mm-dd`; `number` fields hold a plain decimal string
+  (e.g. `"12.5"`); `text`/`select` hold free text. Preset options (dropdowns) apply to
+  `select` only. Display: date field values render via the short-date formatter, numbers as-is.
+- **Payment source ("Paid from").** An entry's `payer` is optional attribution: a person's
+  name, a fund's short/name label, or blank (→ "Unspecified" bucket in Reports). Picking a
+  **fund** as the source also writes a linked mirror `dir:'out'` tx into that fund's ledger
+  (both rows share a `linkId`; `linkSpaceId` points at the paired space), so `fundBalance`
+  (base + in − out) drops automatically. Fund `out` never counts as household spending.
+  Back-compat: legacy `payer:'Joint'` maps to the Joint Fund option at display level (the fund
+  option value is the fund's `short`, e.g. `'Joint'`) — stored data is not rewritten.
 Personal spaces are spaces with `kind: 'personal'`, `group: 'personal'`, id = person id (e.g. `jc`).
 Income = sum of `dir:'in'` tx in a personal space for the month (never a fixed number).
 Home roll-up "total spent" = sum over spend spaces (Everyday+Housing+Car equivalents: all

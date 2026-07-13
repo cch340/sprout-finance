@@ -7,6 +7,12 @@ import { isoMonth, monthShort } from './format';
 
 const inMonth = (t: Tx, month: string): boolean => t.date.slice(0, 7) === month;
 
+/** Bucket label for a tx with no attributed payer in "Who paid" roll-ups. */
+export const UNSPECIFIED = 'Unspecified';
+
+/** Payer bucket key for a tx: its payer, or UNSPECIFIED when blank/missing. */
+const payerKey = (t: Tx): string => (t.payer && t.payer.trim() ? t.payer : UNSPECIFIED);
+
 const spaceTxs = (spaceId: string, txs: Tx[], month?: string): Tx[] =>
   txs.filter((t) => t.spaceId === spaceId && (month ? inMonth(t, month) : true));
 
@@ -45,7 +51,7 @@ export function spendByPerson(
   for (const space of spendSpaces(spaces)) {
     for (const t of spaceTxs(space.id, txs, month)) {
       if (t.dir === 'in') continue;
-      const key = t.payer ?? 'Joint';
+      const key = payerKey(t);
       out[key] = (out[key] ?? 0) + t.amount;
     }
   }
@@ -197,7 +203,7 @@ export function spendByPersonRange(
   for (const space of spendSpaces(spaces)) {
     for (const t of txs) {
       if (t.spaceId !== space.id || !inMonths(t, set) || t.dir === 'in') continue;
-      const key = t.payer ?? 'Joint';
+      const key = payerKey(t);
       out[key] = (out[key] ?? 0) + t.amount;
     }
   }
@@ -219,7 +225,7 @@ export function payerSpaceBreakdown(
       short: s.short,
       icon: s.icon,
       value: txs
-        .filter((t) => t.spaceId === s.id && inMonths(t, set) && t.dir !== 'in' && (t.payer ?? 'Joint') === payer)
+        .filter((t) => t.spaceId === s.id && inMonths(t, set) && t.dir !== 'in' && payerKey(t) === payer)
         .reduce((a, t) => a + t.amount, 0),
     }))
     .filter((x) => x.value > 0);

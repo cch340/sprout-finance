@@ -4,9 +4,9 @@ import { isoMonth } from './format';
 import {
   fundBalance, history, incomeOf, monthsInRange, payerSpaceBreakdown, spendByPerson,
   spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
-  totalBudget, totalSpent,
+  totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
-import type { Space } from './types';
+import type { Space, Tx } from './types';
 
 // Pin the reference month so the demo maps deterministically.
 const REF = new Date(2026, 6, 12); // July 2026 (month index 6)
@@ -67,6 +67,42 @@ describe('personal spaces', () => {
 describe('fund balance', () => {
   it('derives displayed balance from baseBalance + in - out', () => {
     expect(fundBalance(spaceById('joint'), snap.txs)).toBeCloseTo(8420, 2);
+  });
+
+  it('a "paid from fund" mirror out tx lowers the fund balance by its amount', () => {
+    const before = fundBalance(spaceById('joint'), snap.txs);
+    const mirror: Tx = {
+      id: 'mirror-1', spaceId: 'joint', title: 'Jaya Grocer', fieldValues: {},
+      note: 'Paid from fund · Everyday Expenses', cat: 'grocery', amount: 120,
+      date: MONTH + '-14', dir: 'out', linkId: 'origin-1', linkSpaceId: 'expenses',
+    };
+    const after = fundBalance(spaceById('joint'), [...snap.txs, mirror]);
+    expect(after).toBeCloseTo(before - 120, 2);
+    // …and the mirror must NOT count as household spending (fund out = 0).
+    expect(spentOf(spaceById('joint'), [...snap.txs, mirror], MONTH)).toBe(0);
+  });
+});
+
+describe('spendByPerson · Unspecified bucket', () => {
+  it('buckets blank/missing payer under Unspecified without inflating others', () => {
+    const base = spendByPerson(snap.spaces, snap.txs, MONTH);
+    expect(base[UNSPECIFIED] ?? 0).toBe(0); // seed always attributes a payer
+    const unattributed: Tx = {
+      id: 'u1', spaceId: 'expenses', title: 'Cash buy', fieldValues: {},
+      note: '', cat: 'grocery', amount: 40, date: MONTH + '-14', dir: 'out', payer: '',
+    };
+    const withU = spendByPerson(snap.spaces, [...snap.txs, unattributed], MONTH);
+    expect(withU[UNSPECIFIED]).toBeCloseTo(40, 2);
+    expect(withU.Joint).toBeCloseTo(base.Joint, 2); // Joint unchanged
+  });
+
+  it('payerSpaceBreakdown resolves the Unspecified payer', () => {
+    const unattributed: Tx = {
+      id: 'u2', spaceId: 'expenses', title: 'Cash buy', fieldValues: {},
+      note: '', cat: 'grocery', amount: 40, date: MONTH + '-14', dir: 'out', payer: '',
+    };
+    const rows = payerSpaceBreakdown(snap.spaces, [...snap.txs, unattributed], [MONTH], UNSPECIFIED);
+    expect(rows.reduce((a, r) => a + r.value, 0)).toBeCloseTo(40, 2);
   });
 });
 

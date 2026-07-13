@@ -8,10 +8,18 @@ export type TxDir = 'in' | 'out';
 export type TxStatus = 'paid' | 'due';
 export type Theme = 'light' | 'dark';
 
+export type FieldType = 'text' | 'select' | 'date' | 'number';
+
+/**
+ * A space's custom "extra info" field. Values are always stored as strings in
+ * `Tx.fieldValues`: `date` fields hold an ISO `yyyy-mm-dd`, `number` fields hold
+ * a plain decimal string (e.g. `"12.5"`), `text`/`select` hold free text.
+ * `options`/preset UI apply to `select` only.
+ */
 export interface FieldDef {
   key: string;
   label: string;
-  type: 'text' | 'select';
+  type: FieldType;
   primary?: boolean;
   options?: string[];
   placeholder?: string;
@@ -63,6 +71,13 @@ export interface Tx {
   payer?: 'Joint' | string;
   dir: TxDir;
   status?: TxStatus;
+  /**
+   * Links a spend entry and its fund "paid from" mirror tx. Both rows share the
+   * same `linkId`; `linkSpaceId` points at the *other* space in the pair (the
+   * fund for the origin entry, the origin space for the mirror).
+   */
+  linkId?: string;
+  linkSpaceId?: string;
 }
 
 export interface Person {

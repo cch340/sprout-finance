@@ -35,6 +35,10 @@ function FieldRow({
   const [np, setNp] = useState('');
   const opts = field.options ?? [];
   const isSelect = field.type === 'select' && opts.length > 0;
+  // Presets (which turn a field into a dropdown) only make sense for text/list.
+  const canPreset = field.type === 'text' || field.type === 'select';
+  const typeLabel =
+    field.type === 'date' ? 'date' : field.type === 'number' ? 'number' : isSelect ? 'dropdown' : 'text';
 
   const addOpt = () => {
     const v = np.trim();
@@ -71,7 +75,7 @@ function FieldRow({
           {field.label}
           {field.primary ? ' · title' : ''}
         </span>
-        <Badge tone={isSelect ? 'accent' : 'neutral'}>{isSelect ? 'dropdown' : 'text'}</Badge>
+        <Badge tone={isSelect ? 'accent' : 'neutral'}>{typeLabel}</Badge>
         {!field.primary && onRemove && (
           <IconButton icon="x" label="Remove field" variant="ghost" size="sm" onClick={onRemove} />
         )}
@@ -85,19 +89,21 @@ function FieldRow({
           ))}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1 }}>
-          <Input
-            placeholder="Add a preset value…"
-            value={np}
-            onChange={(e) => setNp(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addOpt()}
-          />
+      {canPreset && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <Input
+              placeholder="Add a preset value…"
+              value={np}
+              onChange={(e) => setNp(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addOpt()}
+            />
+          </div>
+          <Button variant="ghost" size="sm" iconStart="plus" onClick={addOpt}>
+            Preset
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" iconStart="plus" onClick={addOpt}>
-          Preset
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
@@ -116,7 +122,7 @@ export function SpaceSettingsDialog() {
   const [name, setName] = useState('');
   const [newCat, setNewCat] = useState('');
   const [newField, setNewField] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'select'>('text');
+  const [newFieldType, setNewFieldType] = useState<FieldDef['type']>('text');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -266,18 +272,22 @@ export function SpaceSettingsDialog() {
                 onKeyDown={(e) => e.key === 'Enter' && addField()}
               />
             </div>
-            <SegmentedControl
-              value={newFieldType}
-              onChange={(v) => setNewFieldType(v as 'text' | 'select')}
-              options={[
-                { value: 'text', label: 'Text' },
-                { value: 'select', label: 'List' },
-              ]}
-            />
             <Button variant="soft" iconStart="plus" onClick={addField}>
               Add
             </Button>
           </div>
+          <SegmentedControl
+            fullWidth
+            size="sm"
+            value={newFieldType}
+            onChange={(v) => setNewFieldType(v as FieldDef['type'])}
+            options={[
+              { value: 'text', label: 'Text' },
+              { value: 'select', label: 'List' },
+              { value: 'date', label: 'Date' },
+              { value: 'number', label: 'Number' },
+            ]}
+          />
         </div>
 
         {/* danger zone */}
