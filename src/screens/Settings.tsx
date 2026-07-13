@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Avatar, Card, Icon, ListRow, Switch } from '../design-system';
+import { Avatar, Button, Card, Icon, ListRow, Switch } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import { monthLabel } from '../domain/format';
 import { useIsDesktop } from '../shell/useIsDesktop';
@@ -29,9 +30,14 @@ function SettingsBody() {
   const billReminders = useAppStore((s) => s.snapshot.settings.billReminders);
   const setTheme = useAppStore((s) => s.setTheme);
   const saveSettings = useAppStore((s) => s.saveSettings);
-  const seedDemo = useAppStore((s) => s.seedDemo);
   const resetAll = useAppStore((s) => s.resetAll);
   const openNewSpace = useAppStore((s) => s.openNewSpace);
+  const email = useAppStore((s) => s.email);
+  const inviteCode = useAppStore((s) => s.inviteCode);
+  const signOut = useAppStore((s) => s.signOut);
+  const showToast = useAppStore((s) => s.showToast);
+
+  const [copied, setCopied] = useState(false);
 
   const people = snapshot.household.people;
   const adults = people.filter((p) => p.id !== 'leo');
@@ -41,15 +47,25 @@ function SettingsBody() {
     `Household · ${adults.length} member${adults.length === 1 ? '' : 's'}` +
     (kids.length ? ` + ${kids.map((k) => k.name).join(', ')}` : '');
 
-  const loadDemo = async () => {
-    const hasData = snapshot.txs.length > 0;
-    if (hasData && !window.confirm('Load demo data? This replaces your current household and ledger.')) return;
-    await seedDemo();
+  const copyInvite = async () => {
+    if (!inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      showToast('Invite code copied', inviteCode);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      showToast('Copy failed', inviteCode);
+    }
+  };
+
+  const doSignOut = async () => {
+    await signOut();
     navigate('/', { replace: true });
   };
 
   const reset = async () => {
-    if (!window.confirm('Reset all data? This permanently deletes your household, spaces and entries.')) return;
+    if (!window.confirm('Reset all data? This permanently deletes your spaces and entries.')) return;
     await resetAll();
     navigate('/onboarding', { replace: true });
   };
@@ -76,6 +92,44 @@ function SettingsBody() {
           <Icon name="chevron-right" size={18} style={{ color: 'var(--text-subtle)' }} />
         </div>
       </Card>
+
+      {/* Account */}
+      <div>
+        <SectionLabel>Account</SectionLabel>
+        <Card padding="sm">
+          <ListRow
+            leading={<Icon name="user" size={20} style={{ color: 'var(--text-muted)' }} />}
+            title="Signed in"
+            trailing={<span style={{ font: 'var(--font-body)', color: 'var(--text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email ?? '—'}</span>}
+            divider
+          />
+          <ListRow
+            leading={<Icon name="users" size={20} style={{ color: 'var(--text-muted)' }} />}
+            title="Invite partner"
+            subtitle="Share this code so they can join"
+            trailing={
+              <button
+                type="button"
+                onClick={() => void copyInvite()}
+                disabled={!inviteCode}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, cursor: inviteCode ? 'pointer' : 'default',
+                  background: 'var(--accent-soft)', color: 'var(--accent-soft-fg)', border: 'none',
+                  borderRadius: 'var(--radius-md)', padding: '6px 10px',
+                  font: 'var(--font-label)', fontWeight: 'var(--fw-bold)', letterSpacing: '0.14em',
+                }}
+              >
+                {inviteCode ?? '——————'}
+                <Icon name={copied ? 'check' : 'plus-circle'} size={15} />
+              </button>
+            }
+            divider
+          />
+          <div style={{ padding: 'var(--space-3)' }}>
+            <Button variant="secondary" fullWidth onClick={() => void doSignOut()}>Sign out</Button>
+          </div>
+        </Card>
+      </div>
 
       {/* Appearance */}
       <div>
@@ -137,13 +191,6 @@ function SettingsBody() {
       <div>
         <SectionLabel>Data</SectionLabel>
         <Card padding="sm">
-          <ListRow
-            leading={<Icon name="wand" size={20} style={{ color: 'var(--text-muted)' }} />}
-            title="Load demo data"
-            subtitle="Replace with the sample household"
-            onClick={() => void loadDemo()}
-            divider
-          />
           <ListRow
             leading={<Icon name="trash" size={20} style={{ color: 'var(--money-over)' }} />}
             title={<span style={{ color: 'var(--money-over)', fontWeight: 'var(--fw-semibold)' }}>Reset all data</span>}

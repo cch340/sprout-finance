@@ -3,6 +3,9 @@
 
 import { create } from 'zustand';
 import * as repo from '../data/repo';
+import type { RealtimeTable } from '../data/remote-repo';
+import { supabase } from '../data/supabase';
+import { clearCache, loadCache, saveCache } from '../data/db';
 import { findMirror, planEntryUpdate, resolvePaidFromFund } from '../domain/entry-links';
 import type { EntryEdit } from '../domain/entry-links';
 import { formatMoney, isoMonth } from '../domain/format';
@@ -15,6 +18,12 @@ import type {
 } from '../domain/types';
 
 export type Status = 'loading' | 'ready';
+
+const OFFLINE_MSG = "You're offline — change not saved";
+
+// Realtime plumbing (module-level, one channel per session).
+let unsubscribeRealtime: (() => void) | null = null;
+const refetchTimers: Partial<Record<RealtimeTable, ReturnType<typeof setTimeout>>> = {};
 
 export interface Toast {
   msg: string;
@@ -60,6 +69,21 @@ export interface AppState {
   month: string;
   toast: Toast | null;
 
+  // auth + household gate
+  /** True once a Supabase session exists. */
+  authed: boolean;
+  /** True once the caller's household is loaded (snapshot is cloud data). */
+  hasHousehold: boolean;
+  /** Showing cached data while the cloud fetch runs. */
+  syncing: boolean;
+  /** Cloud unreachable — showing cached data read-only; mutations are blocked. */
+  offline: boolean;
+  /** Signed-in user's email (for the Settings account card). */
+  email: string | null;
+  /** Active household id + invite code (for "Invite partner"). */
+  householdId: string | null;
+  inviteCode: string | null;
+
   // UI / dialog state
   addEntryOpen: boolean;
   addEntrySpaceId: string | null;
@@ -70,9 +94,17 @@ export interface AppState {
   newSpaceOpen: boolean;
   settingsSpaceId: string | null;
 
-  // lifecycle
+  // lifecycle + auth
   boot: () => Promise<void>;
-  seedDemo: () => Promise<void>;
+  /** Sign in / sign up then re-run the boot gate. */
+  refreshAfterAuth: () => Promise<void>;
+  signOut: () => Promise<void>;
+  /** Onboarding: create a new household (sets context + invite code). */
+  createHousehold: () => Promise<void>;
+  /** Onboarding: join a partner's household by invite code, then load it. */
+  joinHousehold: (code: string) => Promise<void>;
+  /** Load the active household's snapshot, cache it, and start realtime sync. */
+  loadHousehold: () => Promise<void>;
   resetAll: () => Promise<void>;
 
   // mutations
@@ -118,6 +150,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   month: isoMonth(new Date()),
   toast: null,
 
+  authed: false,
+  hasHousehold: false,
+  syncing: false,
+  offline: false,
+  email: null,
+  householdId: null,
+  inviteCode: null,
+
   addEntryOpen: false,
   addEntrySpaceId: null,
   editEntryId: null,
@@ -126,28 +166,91 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsSpaceId: null,
 
   async boot() {
-    let snapshot = await repo.loadSnapshot();
-    // Dev convenience: `?demo` seeds the sample ledger on a fresh install.
-    const wantsDemo =
-      typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).has('demo');
-    if (wantsDemo && !snapshot.household.onboarded) {
-      snapshot = await repo.seedDemo(new Date());
+    set({ status: 'loading', month: isoMonth(new Date()) });
+    // Instant paint from the boot cache while we authenticate + fetch.
+    const cached = await loadCache();
+    if (cached) {
+      initTheme(cached.settings.theme);
+      set({ snapshot: cached, syncing: true });
     }
-    initTheme(snapshot.settings.theme);
-    set({ snapshot, status: 'ready', month: isoMonth(new Date()) });
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      teardownRealtime();
+      repo.setCurrentHousehold(null);
+      set({
+        status: 'ready', authed: false, hasHousehold: false, syncing: false,
+        offline: false, email: null, householdId: null, inviteCode: null,
+        snapshot: EMPTY_SNAPSHOT,
+      });
+      return;
+    }
+    set({ authed: true, email: session.user.email ?? null });
+
+    try {
+      const hh = await repo.myHousehold();
+      if (!hh) {
+        set({ status: 'ready', hasHousehold: false, syncing: false, offline: false });
+        return;
+      }
+      repo.setCurrentHousehold(hh.id);
+      set({ householdId: hh.id, inviteCode: hh.invite_code });
+      await get().loadHousehold();
+    } catch {
+      // Network / cloud failure: fall back to cached data read-only if we have it.
+      if (cached) {
+        set({ status: 'ready', hasHousehold: true, syncing: false, offline: true });
+        get().showToast('Offline — showing your last synced data');
+      } else {
+        set({ status: 'ready', hasHousehold: false, syncing: false, offline: true });
+      }
+    }
   },
 
-  async seedDemo() {
-    const snapshot = await repo.seedDemo(new Date());
-    applyTheme(snapshot.settings.theme);
-    set({ snapshot, status: 'ready', month: isoMonth(new Date()) });
-    get().showToast('Demo data loaded', 'Your financial report');
+  async loadHousehold() {
+    const snapshot = await repo.loadSnapshot();
+    await saveCache(snapshot);
+    initTheme(snapshot.settings.theme);
+    set({
+      snapshot, status: 'ready', hasHousehold: true, syncing: false, offline: false,
+      month: isoMonth(new Date()),
+    });
+    startRealtime();
+  },
+
+  async refreshAfterAuth() {
+    await get().boot();
+  },
+
+  async signOut() {
+    teardownRealtime();
+    await supabase.auth.signOut();
+    await clearCache();
+    repo.setCurrentHousehold(null);
+    set({
+      status: 'ready', authed: false, hasHousehold: false, syncing: false, offline: false,
+      email: null, householdId: null, inviteCode: null, snapshot: EMPTY_SNAPSHOT,
+    });
+  },
+
+  async createHousehold() {
+    const row = await repo.createHousehold();
+    set({ householdId: row.id, inviteCode: row.invite_code });
+  },
+
+  async joinHousehold(code) {
+    const row = await repo.joinHousehold(code);
+    set({ householdId: row.id, inviteCode: row.invite_code });
+    await get().loadHousehold();
   },
 
   async resetAll() {
     await repo.resetAll();
-    set({ snapshot: { ...EMPTY_SNAPSHOT, household: { ...DEFAULT_HOUSEHOLD }, settings: { ...DEFAULT_SETTINGS } } });
+    set({
+      snapshot: { ...EMPTY_SNAPSHOT, household: { ...DEFAULT_HOUSEHOLD }, settings: { ...DEFAULT_SETTINGS } },
+      hasHousehold: false,
+    });
+    await clearCache();
   },
 
   async addEntry(input) {
@@ -185,7 +288,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       linkId,
       linkSpaceId: fund?.id,
     };
-    await repo.addTx(tx);
     const added: Tx[] = [tx];
     if (fund) {
       const mirror: Tx = {
@@ -201,10 +303,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         linkId,
         linkSpaceId: input.spaceId,
       };
-      await repo.addTx(mirror);
       added.unshift(mirror);
     }
-    set({ snapshot: { ...snapshot, txs: [...added, ...snapshot.txs] } });
+    if (!(await guardWrite(get, () => repo.addTxs(added)))) return tx;
+    commitSnapshot(get, set, { txs: [...added, ...snapshot.txs] });
     const money = formatMoney(input.amount, { currency: snapshot.settings.currency });
     const sub = `${money} · ${title}`;
     get().showToast(dir === 'in' ? 'Income added' : 'Entry added', sub);
@@ -212,20 +314,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   async updateTx(id, patch) {
-    await repo.updateTx(id, patch);
+    if (!(await guardWrite(get, () => repo.updateTx(id, patch)))) return;
     const { snapshot } = get();
-    set({
-      snapshot: {
-        ...snapshot,
-        txs: snapshot.txs.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-      },
+    commitSnapshot(get, set, {
+      txs: snapshot.txs.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     });
   },
 
   async deleteTx(id) {
-    await repo.deleteTx(id);
+    if (!(await guardWrite(get, () => repo.deleteTx(id)))) return;
     const { snapshot } = get();
-    set({ snapshot: { ...snapshot, txs: snapshot.txs.filter((t) => t.id !== id) } });
+    commitSnapshot(get, set, { txs: snapshot.txs.filter((t) => t.id !== id) });
   },
 
   async updateEntry(id, edit) {
@@ -243,7 +342,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       fund,
       repo.newId('tx'),
     );
-    await repo.applyEntryUpdate(id, plan.originPatch, plan.mirror);
+    if (!(await guardWrite(get, () => repo.applyEntryUpdate(id, plan.originPatch, plan.mirror)))) return;
 
     // Reflect the same changes in the in-memory snapshot.
     let txs = snapshot.txs.map((t) => (t.id === id ? { ...t, ...plan.originPatch } : t));
@@ -256,7 +355,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (m.removeId) txs = txs.filter((t) => t.id !== m.removeId);
       txs = [m.create, ...txs];
     }
-    set({ snapshot: { ...snapshot, txs } });
+    commitSnapshot(get, set, { txs });
     get().showToast('Entry updated', `${formatMoney(edit.amount, { currency: snapshot.settings.currency })} · ${edit.title}`);
   },
 
@@ -266,8 +365,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!tx) return;
     const linked = findMirror(tx, snapshot.txs);
     const ids = linked ? [id, linked.id] : [id];
-    await repo.deleteTxs(ids);
-    set({ snapshot: { ...snapshot, txs: snapshot.txs.filter((t) => !ids.includes(t.id)) } });
+    if (!(await guardWrite(get, () => repo.deleteTxs(ids)))) return;
+    commitSnapshot(get, set, { txs: snapshot.txs.filter((t) => !ids.includes(t.id)) });
     get().showToast('Entry deleted');
   },
 
@@ -277,79 +376,68 @@ export const useAppStore = create<AppState>((set, get) => ({
       space.sortOrder ??
       snapshot.spaces.reduce((max, s) => Math.max(max, s.sortOrder), -1) + 1;
     const full: Space = { ...space, sortOrder } as Space;
-    await repo.addSpace(full);
-    set({ snapshot: { ...snapshot, spaces: [...snapshot.spaces, full] } });
+    if (!(await guardWrite(get, () => repo.addSpace(full)))) return full;
+    commitSnapshot(get, set, { spaces: [...snapshot.spaces, full] });
     return full;
   },
 
   async updateSpace(id, patch) {
-    await repo.updateSpace(id, patch);
+    if (!(await guardWrite(get, () => repo.updateSpace(id, patch)))) return;
     const { snapshot } = get();
-    set({
-      snapshot: {
-        ...snapshot,
-        spaces: snapshot.spaces.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-      },
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) => (s.id === id ? { ...s, ...patch } : s)),
     });
   },
 
   async deleteSpace(id) {
-    await repo.deleteSpace(id);
+    if (!(await guardWrite(get, () => repo.deleteSpace(id)))) return;
     const { snapshot } = get();
-    set({
-      snapshot: {
-        ...snapshot,
-        spaces: snapshot.spaces.filter((s) => s.id !== id),
-        txs: snapshot.txs.filter((t) => t.spaceId !== id),
-        recurring: snapshot.recurring.filter((r) => r.spaceId !== id),
-      },
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.filter((s) => s.id !== id),
+      txs: snapshot.txs.filter((t) => t.spaceId !== id),
+      recurring: snapshot.recurring.filter((r) => r.spaceId !== id),
     });
   },
 
   async addRecurring(item) {
     const full: RecurringItem = { ...item, id: repo.newId('rec') };
-    await repo.addRecurring(full);
+    if (!(await guardWrite(get, () => repo.addRecurring(full)))) return full;
     const { snapshot } = get();
-    set({ snapshot: { ...snapshot, recurring: [...snapshot.recurring, full] } });
+    commitSnapshot(get, set, { recurring: [...snapshot.recurring, full] });
     return full;
   },
 
   async updateRecurring(id, patch) {
-    await repo.updateRecurring(id, patch);
+    if (!(await guardWrite(get, () => repo.updateRecurring(id, patch)))) return;
     const { snapshot } = get();
-    set({
-      snapshot: {
-        ...snapshot,
-        recurring: snapshot.recurring.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-      },
+    commitSnapshot(get, set, {
+      recurring: snapshot.recurring.map((r) => (r.id === id ? { ...r, ...patch } : r)),
     });
   },
 
   async deleteRecurring(id) {
-    await repo.deleteRecurring(id);
+    if (!(await guardWrite(get, () => repo.deleteRecurring(id)))) return;
     const { snapshot } = get();
-    set({ snapshot: { ...snapshot, recurring: snapshot.recurring.filter((r) => r.id !== id) } });
+    commitSnapshot(get, set, { recurring: snapshot.recurring.filter((r) => r.id !== id) });
   },
 
   async saveHousehold(household) {
-    await repo.saveHousehold(household);
-    const { snapshot } = get();
-    set({ snapshot: { ...snapshot, household } });
+    if (!(await guardWrite(get, () => repo.saveHousehold(household)))) return;
+    commitSnapshot(get, set, { household });
   },
 
   async saveSettings(settings) {
-    await repo.saveSettings(settings);
-    const { snapshot } = get();
+    if (!(await guardWrite(get, () => repo.saveSettings(settings)))) return;
     applyTheme(settings.theme);
-    set({ snapshot: { ...snapshot, settings } });
+    commitSnapshot(get, set, { settings });
   },
 
   async setTheme(theme) {
     const { snapshot } = get();
     const settings: Settings = { ...snapshot.settings, theme };
     applyTheme(theme);
-    set({ snapshot: { ...snapshot, settings } });
-    await repo.saveSettings(settings);
+    if (!(await guardWrite(get, () => repo.saveSettings(settings)))) return;
+    commitSnapshot(get, set, { settings });
   },
 
   async toggleTheme() {
@@ -392,3 +480,84 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ settingsSpaceId: null });
   },
 }));
+
+// ---- write guard + cache helpers -----------------------------------------
+type Get = () => AppState;
+type Set = (partial: Partial<AppState>) => void;
+
+/**
+ * Run a cloud write. Returns false (and toasts) when offline or the write fails,
+ * so the caller skips the optimistic snapshot update (revert). True on success.
+ */
+async function guardWrite(get: Get, fn: () => Promise<void>): Promise<boolean> {
+  if (get().offline) {
+    get().showToast(OFFLINE_MSG);
+    return false;
+  }
+  try {
+    await fn();
+    return true;
+  } catch (err) {
+    console.error('[sprout] cloud write failed', err);
+    get().showToast(OFFLINE_MSG);
+    return false;
+  }
+}
+
+/** Merge a snapshot patch into state and persist to the boot cache. */
+function commitSnapshot(get: Get, set: Set, patch: Partial<Snapshot>): void {
+  const snapshot = { ...get().snapshot, ...patch };
+  set({ snapshot });
+  void saveCache(snapshot);
+}
+
+// ---- realtime partner sync -----------------------------------------------
+/**
+ * Refetch one table (debounced 200ms) and splice it into the snapshot. Runs on
+ * every realtime event for the household; refetch is idempotent so own-echoes
+ * are harmless (no skip-own-echo needed).
+ */
+function scheduleRefetch(table: RealtimeTable): void {
+  clearTimeout(refetchTimers[table]);
+  refetchTimers[table] = setTimeout(() => {
+    void (async () => {
+      try {
+        const get: Get = useAppStore.getState;
+        const set: Set = (p) => useAppStore.setState(p);
+        if (table === 'txs') commitSnapshot(get, set, { txs: await repo.fetchTxs() });
+        else if (table === 'spaces') commitSnapshot(get, set, { spaces: await repo.fetchSpaces() });
+        else if (table === 'recurring') commitSnapshot(get, set, { recurring: await repo.fetchRecurring() });
+        else if (table === 'people') {
+          const people = await repo.fetchPeople();
+          commitSnapshot(get, set, { household: { ...get().snapshot.household, people } });
+        } else if (table === 'settings') {
+          const s = await repo.fetchSettings();
+          const settings = { ...get().snapshot.settings, ...s };
+          applyTheme(settings.theme);
+          commitSnapshot(get, set, { settings });
+        }
+      } catch (err) {
+        console.error('[sprout] realtime refetch failed', err);
+      }
+    })();
+  }, 200);
+}
+
+function startRealtime(): void {
+  teardownRealtime();
+  unsubscribeRealtime = repo.subscribeRealtime(scheduleRefetch);
+}
+
+function teardownRealtime(): void {
+  if (unsubscribeRealtime) {
+    unsubscribeRealtime();
+    unsubscribeRealtime = null;
+  }
+}
+
+// Debug handle: expose the store so tooling (and manual debugging in the
+// console) can inspect state and trigger a manual cloud refetch. Harmless in
+// production; carries no secrets.
+if (typeof window !== 'undefined') {
+  (window as unknown as { useAppStore?: typeof useAppStore }).useAppStore = useAppStore;
+}

@@ -6,13 +6,28 @@ This doc is the source of truth for implementation conventions. The design spec 
 `design/design_handoff_sprout_pwa/sprout/` and screenshots in `design/design_handoff_sprout_pwa/screenshots/`.
 
 ## Product decisions (agreed defaults)
-- **Local-only**: persistence in IndexedDB (Dexie) behind a repository interface. No backend yet.
-- **Demo seed optional**: onboarding creates a real empty household; a "Load demo data" action
-  (Settings, and dev default via `?demo`) seeds the JC/CH June ledger from the handoff.
+- **Online-first**: Supabase (Postgres + Auth + Realtime) is the source of truth. All data is
+  household-scoped with RLS (members only). Dexie/IndexedDB is kept ONLY as a boot cache of the
+  last-loaded snapshot — never a second source of truth.
+- **Auth**: email + password (chosen for a 2-person household — reliable in installed iOS PWAs
+  where magic links break the standalone context, and works with iCloud keychain autofill).
+  No session → Login. Session but no household → Onboarding. Session + household → the app.
+- **Households & sharing**: `create_household()` provisions a household + owner membership and a
+  6-char invite code; a partner `join_household(code)` joins and immediately loads the shared
+  data. `my_household()` resolves the caller's household at boot. Onboarding's first step is a
+  choice: start a new household (the 5-step setup) or join a partner's with their invite code.
+- **No seeding in the running app**: onboarding creates empty ledgers only. The spreadsheet seed
+  (`seed-sheet.*`, `scripts/convert-sheet.py`) is retained in the repo for a future, deliberate
+  import — nothing in the app calls it.
+- **Online-only writes**: a mutation requires connectivity. On network failure the change is not
+  applied to the snapshot (no optimistic write) and the user sees "You're offline — change not
+  saved". If the initial cloud fetch fails but a cache exists, the app shows cached data behind a
+  read-only offline banner and blocks mutations.
 - **Real months**: transactions carry ISO dates. Home/Reports compute over the current month;
-  history/trend derives from actual data. Demo seed maps sample entries onto recent months.
+  history/trend derives from actual data.
 - Currency: configurable label, default **RM** (Malaysian Ringgit), formatted `RM 4,182.50`,
-  tabular figures, dimmed symbol/decimals (the `Amount` component owns this).
+  tabular figures, dimmed symbol/decimals (the `Amount` component owns this). Currency lives on
+  the `households` row; `settings` holds theme + bill reminders.
 
 ## Stack
 - React 18 + Vite + TypeScript (strict). React Router v6. Zustand for app state.
@@ -84,10 +99,30 @@ Selectors in `domain/selectors.ts` are pure `(state, args) => value`; mirror dat
 `secondaryFields`, plus `monthLabel`, month filtering, and history.
 
 ## State & data flow
-- Dexie tables: `spaces`, `txs`, `recurring`, `household` (single row), `settings`.
-- `data/repo.ts` exposes async CRUD; Zustand store holds an in-memory snapshot loaded at boot,
-  mutations write Dexie then update the snapshot (optimistic). Views read via selectors.
-- App boot: no household → `/onboarding`. Otherwise last route / Home.
+- **Cloud tables** (all household-scoped, composite PK `(household_id, id)`, TEXT ids in the app's
+  existing id style): `households`, `household_members`, `people`, `spaces`, `txs`, `recurring`,
+  `settings`. Column mapping to the TS domain types: `spaces.grp ↔ group`,
+  `spaces.base_balance ↔ baseBalance`, `spaces.sort_order ↔ sortOrder`, `txs.field_values ↔
+  fieldValues`, `txs.link_id/link_space_id ↔ linkId/linkSpaceId` (jsonb ↔ objects). Domain types
+  and `domain/selectors.ts` are unchanged — pure functions remain the core.
+- **Repository** (`data/remote-repo.ts`, re-exported as `data/repo.ts`): the only module that
+  talks to Supabase. Same surface the store already used (`loadSnapshot`, `addTx`/`addTxs`,
+  `applyEntryUpdate`, `deleteTxs`, `addSpace`/`updateSpace`/`deleteSpace`, recurring CRUD,
+  `saveHousehold`, `saveSettings`, `resetAll`, `createHousehold`/`joinHousehold`/`myHousehold`,
+  `subscribeRealtime`, `newId`). The active `household_id` is a module-level value set at boot.
+  Entry + fund-mirror ops are single calls (`.insert([a,b])`, `.delete().in('id',[…])`).
+- **Store** (`store/useAppStore.ts`): holds the in-memory snapshot. `boot()` — paint the Dexie
+  cache instantly (with a `syncing` flag) → `getSession()` → `my_household()` → `loadHousehold()`
+  (fetch snapshot, persist to cache, start realtime). Mutations write the cloud first; only on
+  success do they update the snapshot and re-persist the cache; on failure they revert (skip the
+  update) and toast offline. Gate flags `authed` / `hasHousehold` / `offline` drive routing in
+  `App.tsx`.
+- **Boot cache** (`data/db.ts`): Dexie v2 is a single `cache` row storing the whole snapshot.
+- **Realtime partner sync**: one `supabase.channel` per session subscribes to `postgres_changes`
+  on `txs`, `spaces`, `recurring`, `settings`, `people` filtered `household_id=eq.<hid>`. Each
+  event schedules a 200ms-debounced refetch of just that table, which is spliced into the
+  snapshot (idempotent — no skip-own-echo needed).
+- App boot routing: no session → Login; session + no household → Onboarding; else the app.
 - Toast state is transient in the store.
 
 ## Verification bar for every task
