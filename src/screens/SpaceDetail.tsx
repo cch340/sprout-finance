@@ -319,7 +319,9 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
 function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const updateSpace = useAppStore((s) => s.updateSpace);
-  const [cat, setCat] = useState('all');
+  const openEntryDetail = useAppStore((s) => s.openEntryDetail);
+  // Multi-select category filter: an empty set means "All".
+  const [catSel, setCatSel] = useState<Set<string>>(new Set());
   const [monthSel, setMonthSel] = useState('all');
   const [edit, setEdit] = useState(false);
   const [newCat, setNewCat] = useState('');
@@ -327,8 +329,15 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const [visible, setVisible] = useState(PAGE);
 
   const cats = space.cats;
+  const toggleCat = (key: string) =>
+    setCatSel((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   useEffect(() => {
-    setCat('all');
+    setCatSel(new Set());
     setMonthSel('all');
     setEdit(false);
   }, [space.id]);
@@ -347,19 +356,19 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Reports) stay parameterized by `month`, unaffected by this view state.
   const list = useMemo(() => {
     let l = snapshot.txs.filter((t) => t.spaceId === space.id);
-    if (cat !== 'all') l = l.filter((t) => t.cat === cat);
+    if (catSel.size > 0) l = l.filter((t) => catSel.has(t.cat));
     if (monthSel !== 'all') l = l.filter((t) => t.date.slice(0, 7) === monthSel);
     return l.slice().sort(byDateDesc);
-  }, [snapshot.txs, space.id, cat, monthSel]);
+  }, [snapshot.txs, space.id, catSel, monthSel]);
 
   // Incremental "show more": render the first N matching rows, reveal PAGE more
   // at a time. Reset the chunk whenever the filters or space change.
-  useEffect(() => setVisible(PAGE), [space.id, cat, monthSel]);
+  useEffect(() => setVisible(PAGE), [space.id, catSel, monthSel]);
   const shown = list.slice(0, visible);
 
   const removeCat = (key: string) => {
     void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
-    if (cat === key) setCat('all');
+    if (catSel.has(key)) toggleCat(key);
   };
   const addCat = () => {
     const label = newCat.trim();
@@ -397,15 +406,15 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
             }}
           >
             {!edit && (
-              <Tag selected={cat === 'all'} onClick={() => setCat('all')}>
+              <Tag selected={catSel.size === 0} onClick={() => setCatSel(new Set())}>
                 All
               </Tag>
             )}
             {cats.map((c) => (
               <Tag
                 key={c.key}
-                selected={!edit && cat === c.key}
-                onClick={edit ? undefined : () => setCat(c.key)}
+                selected={!edit && catSel.has(c.key)}
+                onClick={edit ? undefined : () => toggleCat(c.key)}
                 onRemove={edit ? () => removeCat(c.key) : undefined}
               >
                 <CategoryIcon category={c.key} emoji={c.emoji} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
@@ -473,6 +482,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
                 <Amount value={t.amount} kind={t.dir === 'in' ? 'in' : 'neutral'} showSign={t.dir === 'in'} />
               }
               meta={statusMeta(t)}
+              onClick={() => openEntryDetail(t.id)}
               divider={i < shown.length - 1}
             />
           ))

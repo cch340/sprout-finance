@@ -120,6 +120,7 @@ export function SpaceSettingsDialog() {
   const showToast = useAppStore((s) => s.showToast);
   const navigate = useNavigate();
 
+  const [section, setSection] = useState<'general' | 'categories' | 'fields'>('general');
   const [name, setName] = useState('');
   const [newCat, setNewCat] = useState('');
   const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
@@ -129,6 +130,7 @@ export function SpaceSettingsDialog() {
 
   useEffect(() => {
     if (space) setName(space.name);
+    setSection('general');
     setNewCat('');
     setNewEmoji(undefined);
     setNewField('');
@@ -210,124 +212,147 @@ export function SpaceSettingsDialog() {
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-        <Input
-          label="Space name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={commitName}
+        <SegmentedControl
+          fullWidth
+          value={section}
+          onChange={(v) => {
+            if (v !== 'general') commitName();
+            setSection(v as 'general' | 'categories' | 'fields');
+          }}
+          options={[
+            { value: 'general', label: 'General' },
+            { value: 'categories', label: 'Categories' },
+            { value: 'fields', label: 'Fields' },
+          ]}
         />
 
-        {/* categories */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>Categories</label>
-          {cats.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {cats.map((c) => (
-                <Tag key={c.key} onRemove={() => removeCat(c.key)}>
-                  <CategoryIcon
-                    category={c.key}
-                    emoji={c.emoji}
-                    size={18}
-                    radius="var(--radius-xs)"
-                    style={{ marginRight: 4 }}
-                  />
-                  {c.label}
-                </Tag>
-              ))}
+        {/* general */}
+        {section === 'general' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+            <Input
+              label="Space name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={commitName}
+            />
+
+            {/* danger zone */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+                paddingTop: 'var(--space-4)',
+                borderTop: '1px solid var(--border-subtle)',
+              }}
+            >
+              <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>Danger zone</label>
+              {!confirmDelete ? (
+                <Button variant="ghost" iconStart="trash" onClick={() => setConfirmDelete(true)} style={{ color: 'var(--danger-500)', alignSelf: 'flex-start' }}>
+                  Delete space
+                </Button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                    Delete {space.name} and all its entries? This can’t be undone.
+                  </span>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button variant="danger" iconStart="trash" onClick={() => void doDelete()}>
+                      Delete forever
+                    </Button>
+                    <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1 }}>
-              <Input
-                placeholder="Add a category"
-                value={newCat}
-                onChange={(e) => setNewCat(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addCat()}
-              />
-            </div>
-            <Button variant="soft" iconStart="plus" onClick={addCat}>
-              Add
-            </Button>
           </div>
-          <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} />
-        </div>
+        )}
+
+        {/* categories */}
+        {section === 'categories' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>Categories</label>
+            {cats.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {cats.map((c) => (
+                  <Tag key={c.key} onRemove={() => removeCat(c.key)}>
+                    <CategoryIcon
+                      category={c.key}
+                      emoji={c.emoji}
+                      size={18}
+                      radius="var(--radius-xs)"
+                      style={{ marginRight: 4 }}
+                    />
+                    {c.label}
+                  </Tag>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <Input
+                  placeholder="Add a category"
+                  value={newCat}
+                  onChange={(e) => setNewCat(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addCat()}
+                />
+              </div>
+              <Button variant="soft" iconStart="plus" onClick={addCat}>
+                Add
+              </Button>
+            </div>
+            <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} />
+          </div>
+        )}
 
         {/* fields */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>
-            Extra info fields
-          </label>
-          <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)', marginTop: -4 }}>
-            Shown when adding to this space. Adding preset values turns a field into a dropdown.
-          </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {fields.map((f, i) => (
-              <FieldRow
-                key={f.key + i}
-                field={f}
-                onRemove={f.primary ? undefined : () => removeField(i)}
-                onChange={(next) => setFieldAt(i, next)}
-              />
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <Input
-                placeholder="Add a field, e.g. Warranty"
-                value={newField}
-                onChange={(e) => setNewField(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addField()}
-              />
+        {section === 'fields' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>
+              Extra info fields
+            </label>
+            <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)', marginTop: -4 }}>
+              Shown when adding to this space. Adding preset values turns a field into a dropdown.
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {fields.map((f, i) => (
+                <FieldRow
+                  key={f.key + i}
+                  field={f}
+                  onRemove={f.primary ? undefined : () => removeField(i)}
+                  onChange={(next) => setFieldAt(i, next)}
+                />
+              ))}
             </div>
-            <Button variant="soft" iconStart="plus" onClick={addField}>
-              Add
-            </Button>
-          </div>
-          <SegmentedControl
-            fullWidth
-            size="sm"
-            value={newFieldType}
-            onChange={(v) => setNewFieldType(v as FieldDef['type'])}
-            options={[
-              { value: 'text', label: 'Text' },
-              { value: 'select', label: 'List' },
-              { value: 'date', label: 'Date' },
-              { value: 'number', label: 'Number' },
-            ]}
-          />
-        </div>
-
-        {/* danger zone */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-2)',
-            paddingTop: 'var(--space-4)',
-            borderTop: '1px solid var(--border-subtle)',
-          }}
-        >
-          <label style={{ font: 'var(--font-label)', color: 'var(--text-body)' }}>Danger zone</label>
-          {!confirmDelete ? (
-            <Button variant="ghost" iconStart="trash" onClick={() => setConfirmDelete(true)} style={{ color: 'var(--danger-500)', alignSelf: 'flex-start' }}>
-              Delete space
-            </Button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
-                Delete {space.name} and all its entries? This can’t be undone.
-              </span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="danger" iconStart="trash" onClick={() => void doDelete()}>
-                  Delete forever
-                </Button>
-                <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-                  Cancel
-                </Button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <Input
+                  placeholder="Add a field, e.g. Warranty"
+                  value={newField}
+                  onChange={(e) => setNewField(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addField()}
+                />
               </div>
+              <Button variant="soft" iconStart="plus" onClick={addField}>
+                Add
+              </Button>
             </div>
-          )}
-        </div>
+            <SegmentedControl
+              fullWidth
+              size="sm"
+              value={newFieldType}
+              onChange={(v) => setNewFieldType(v as FieldDef['type'])}
+              options={[
+                { value: 'text', label: 'Text' },
+                { value: 'select', label: 'List' },
+                { value: 'date', label: 'Date' },
+                { value: 'number', label: 'Number' },
+              ]}
+            />
+          </div>
+        )}
       </div>
     </Dialog>
   );

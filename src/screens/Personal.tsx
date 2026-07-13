@@ -29,7 +29,7 @@ function EmptyLine({ children }: { children: string }) {
   );
 }
 
-function txRows(list: Tx[], cats: Category[]) {
+function txRows(list: Tx[], cats: Category[], onOpen: (id: string) => void) {
   return list.map((t, i) => (
     <ListRow
       key={t.id}
@@ -44,6 +44,7 @@ function txRows(list: Tx[], cats: Category[]) {
         />
       }
       meta={shortDate(t.date)}
+      onClick={() => onOpen(t.id)}
       divider={i < list.length - 1}
     />
   ));
@@ -55,6 +56,7 @@ export function Personal() {
   const { who } = useParams();
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
+  const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   const { spaces, txs } = snapshot;
 
   // Incremental "show more": render the first PAGE rows, reveal PAGE more at a
@@ -96,7 +98,7 @@ export function Personal() {
   const ledger = (
     <>
       <Card padding="sm">
-        {list.length === 0 ? <EmptyLine>No entries yet this month.</EmptyLine> : txRows(shown, person.cats)}
+        {list.length === 0 ? <EmptyLine>No entries yet this month.</EmptyLine> : txRows(shown, person.cats, openEntryDetail)}
       </Card>
       {list.length > PAGE && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>

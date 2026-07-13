@@ -10,6 +10,13 @@
   color: var(--text-body);
 }
 
+/* Kill double-tap-to-zoom in the installed/standalone PWA (still allows
+   scroll/pan). Pairs with the viewport user-scalable=no in index.html. */
+.app-mobile,
+.app-desktop {
+  touch-action: manipulation;
+}
+
 /* ============================================================
    MOBILE  (< 900px)
    ============================================================ */

@@ -55,11 +55,16 @@ export function StatCard({
       }}
       {...rest}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', minWidth: 0 }}>
         <span
           style={{
             font: 'var(--font-label)',
             color: accent ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)',
+            // Truncate rather than push the icon out / overflow in narrow cells.
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
           {label}
@@ -68,7 +73,7 @@ export function StatCard({
           <Icon
             name={icon}
             size={18}
-            style={{ color: accent ? 'rgba(255,255,255,0.75)' : 'var(--text-subtle)' }}
+            style={{ color: accent ? 'rgba(255,255,255,0.75)' : 'var(--text-subtle)', flexShrink: 0 }}
           />
         )}
       </div>

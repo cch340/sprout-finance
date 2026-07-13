@@ -3,6 +3,8 @@
 
 import { create } from 'zustand';
 import * as repo from '../data/repo';
+import { findMirror, planEntryUpdate, resolvePaidFromFund } from '../domain/entry-links';
+import type { EntryEdit } from '../domain/entry-links';
 import { formatMoney, isoMonth } from '../domain/format';
 import { applyTheme, initTheme, nextTheme } from './theme';
 import {
@@ -61,6 +63,10 @@ export interface AppState {
   // UI / dialog state
   addEntryOpen: boolean;
   addEntrySpaceId: string | null;
+  /** When set, AddEntryDialog runs in edit mode against this tx (space locked). */
+  editEntryId: string | null;
+  /** When set, the read-only entry-detail dialog is open for this tx. */
+  entryDetailId: string | null;
   newSpaceOpen: boolean;
   settingsSpaceId: string | null;
 
@@ -73,6 +79,10 @@ export interface AppState {
   addEntry: (input: NewEntryInput) => Promise<Tx>;
   updateTx: (id: string, patch: Partial<Tx>) => Promise<void>;
   deleteTx: (id: string) => Promise<void>;
+  /** Edit an origin entry and reconcile its fund mirror. */
+  updateEntry: (id: string, edit: EntryEdit) => Promise<void>;
+  /** Delete an entry and its linked fund mirror (either direction). */
+  deleteEntry: (id: string) => Promise<void>;
   addSpace: (space: Omit<Space, 'sortOrder'> & { sortOrder?: number }) => Promise<Space>;
   updateSpace: (id: string, patch: Partial<Space>) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
@@ -92,7 +102,10 @@ export interface AppState {
 
   // ui setters
   openAddEntry: (spaceId?: string) => void;
+  openEditEntry: (id: string) => void;
   closeAddEntry: () => void;
+  openEntryDetail: (id: string) => void;
+  closeEntryDetail: () => void;
   openNewSpace: () => void;
   closeNewSpace: () => void;
   openSpaceSettings: (spaceId: string) => void;
@@ -107,6 +120,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addEntryOpen: false,
   addEntrySpaceId: null,
+  editEntryId: null,
+  entryDetailId: null,
   newSpaceOpen: false,
   settingsSpaceId: null,
 
@@ -213,6 +228,49 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ snapshot: { ...snapshot, txs: snapshot.txs.filter((t) => t.id !== id) } });
   },
 
+  async updateEntry(id, edit) {
+    const { snapshot } = get();
+    const origin = snapshot.txs.find((t) => t.id === id);
+    if (!origin) return;
+    const originSpace = snapshot.spaces.find((s) => s.id === origin.spaceId);
+    const mirror = findMirror(origin, snapshot.txs);
+    const fund = resolvePaidFromFund(edit.paidFromFundId, origin.spaceId, snapshot.spaces);
+    const plan = planEntryUpdate(
+      origin,
+      mirror,
+      edit,
+      originSpace?.name ?? '',
+      fund,
+      repo.newId('tx'),
+    );
+    await repo.applyEntryUpdate(id, plan.originPatch, plan.mirror);
+
+    // Reflect the same changes in the in-memory snapshot.
+    let txs = snapshot.txs.map((t) => (t.id === id ? { ...t, ...plan.originPatch } : t));
+    const m = plan.mirror;
+    if (m.kind === 'update' && m.id) {
+      txs = txs.map((t) => (t.id === m.id ? { ...t, ...m.patch } : t));
+    } else if (m.kind === 'delete' && m.id) {
+      txs = txs.filter((t) => t.id !== m.id);
+    } else if (m.kind === 'create' && m.create) {
+      if (m.removeId) txs = txs.filter((t) => t.id !== m.removeId);
+      txs = [m.create, ...txs];
+    }
+    set({ snapshot: { ...snapshot, txs } });
+    get().showToast('Entry updated', `${formatMoney(edit.amount, { currency: snapshot.settings.currency })} · ${edit.title}`);
+  },
+
+  async deleteEntry(id) {
+    const { snapshot } = get();
+    const tx = snapshot.txs.find((t) => t.id === id);
+    if (!tx) return;
+    const linked = findMirror(tx, snapshot.txs);
+    const ids = linked ? [id, linked.id] : [id];
+    await repo.deleteTxs(ids);
+    set({ snapshot: { ...snapshot, txs: snapshot.txs.filter((t) => !ids.includes(t.id)) } });
+    get().showToast('Entry deleted');
+  },
+
   async addSpace(space) {
     const { snapshot } = get();
     const sortOrder =
@@ -306,10 +364,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   openAddEntry(spaceId) {
-    set({ addEntryOpen: true, addEntrySpaceId: spaceId ?? null });
+    set({ addEntryOpen: true, addEntrySpaceId: spaceId ?? null, editEntryId: null });
+  },
+  openEditEntry(id) {
+    const tx = get().snapshot.txs.find((t) => t.id === id);
+    set({ addEntryOpen: true, editEntryId: id, addEntrySpaceId: tx?.spaceId ?? null, entryDetailId: null });
   },
   closeAddEntry() {
-    set({ addEntryOpen: false });
+    set({ addEntryOpen: false, editEntryId: null });
+  },
+  openEntryDetail(id) {
+    set({ entryDetailId: id });
+  },
+  closeEntryDetail() {
+    set({ entryDetailId: null });
   },
   openNewSpace() {
     set({ newSpaceOpen: true });

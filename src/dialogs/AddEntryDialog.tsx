@@ -27,8 +27,14 @@ function FieldInput({
   onChange: (v: string) => void;
 }) {
   // `sel` is the chosen dropdown value ('' = none, '__other' = free text).
-  const [sel, setSel] = useState('');
-  const [custom, setCustom] = useState('');
+  // Initialise from any prefilled value (edit mode): a preset option selects
+  // itself; a non-preset non-empty value drops into the "Other…" free-text path.
+  const isPreset =
+    field.type === 'select' && !!field.options && value !== '' && field.options.includes(value);
+  const [sel, setSel] = useState(
+    value === '' ? '' : isPreset ? value : field.type === 'select' && field.options ? '__other' : '',
+  );
+  const [custom, setCustom] = useState(isPreset ? '' : value);
 
   if (field.type === 'select' && field.options && field.options.length > 0) {
     const options = field.options
@@ -113,11 +119,19 @@ function FieldInput({
 export function AddEntryDialog() {
   const open = useAppStore((s) => s.addEntryOpen);
   const initialSpaceId = useAppStore((s) => s.addEntrySpaceId);
+  const editEntryId = useAppStore((s) => s.editEntryId);
   const close = useAppStore((s) => s.closeAddEntry);
   const spaces = useAppStore((s) => s.snapshot.spaces);
+  const txs = useAppStore((s) => s.snapshot.txs);
   const people = useAppStore((s) => s.snapshot.household.people);
   const addEntry = useAppStore((s) => s.addEntry);
+  const updateEntry = useAppStore((s) => s.updateEntry);
   const addRecurring = useAppStore((s) => s.addRecurring);
+
+  // Edit mode: prefill from the target tx and lock the space (avoids cross-space
+  // migration semantics — the origin entry stays in its space).
+  const editTx = editEntryId ? txs.find((t) => t.id === editEntryId) : undefined;
+  const isEdit = Boolean(editTx);
 
   // Space picker: all shared spaces (spend/fund/invest) then personal spaces.
   const spaceOptions = useMemo(() => {
@@ -155,9 +169,24 @@ export function AddEntryDialog() {
   // Bump to re-mount field inputs whenever the space changes (resets local state).
   const [fieldKey, setFieldKey] = useState(0);
 
-  // Reset the whole form each time the dialog opens (honouring preselect).
+  // Reset the whole form each time the dialog opens (honouring preselect); in
+  // edit mode prefill every field from the target tx instead.
   useEffect(() => {
     if (!open) return;
+    if (editTx) {
+      setSpaceId(editTx.spaceId);
+      setDir(editTx.dir);
+      setAmount(String(editTx.amount));
+      setCat(editTx.cat);
+      setFieldVals({ ...editTx.fieldValues });
+      setPayer(editTx.payer ?? '');
+      setNote(editTx.note ?? '');
+      setDate(editTx.date);
+      setRecurring(false);
+      setShowError(false);
+      setFieldKey((k) => k + 1);
+      return;
+    }
     const startId = initialSpaceId && spaces.some((s) => s.id === initialSpaceId)
       ? initialSpaceId
       : firstSpaceId;
@@ -173,7 +202,7 @@ export function AddEntryDialog() {
     setRecurring(false);
     setShowError(false);
     setFieldKey((k) => k + 1);
-  }, [open, initialSpaceId, firstSpaceId, spaces]);
+  }, [open, editEntryId, initialSpaceId, firstSpaceId, spaces]);
 
   const onSpace = (id: string) => {
     const next = spaces.find((s) => s.id === id);
@@ -219,6 +248,21 @@ export function AddEntryDialog() {
       note.trim() ||
       cats.find((c) => c.key === cat)?.label ||
       'Entry';
+    if (isEdit && editTx) {
+      await updateEntry(editTx.id, {
+        amount: amountNum,
+        cat,
+        dir,
+        payer: isPersonal ? undefined : payer,
+        paidFromFundId: isPersonal ? undefined : paidFromFundId,
+        note: note.trim(),
+        title,
+        date,
+        fieldValues: { ...fieldVals },
+      });
+      close();
+      return;
+    }
     await addEntry({
       spaceId: space.id,
       amount: amountNum,
@@ -243,15 +287,19 @@ export function AddEntryDialog() {
     <Dialog
       open={open}
       onClose={close}
-      title="Add entry"
-      description="Pick a space, then fill in what belongs to it."
+      title={isEdit ? 'Edit entry' : 'Add entry'}
+      description={
+        isEdit
+          ? 'Update the details below. The space stays the same.'
+          : 'Pick a space, then fill in what belongs to it.'
+      }
       footer={
         <>
           <Button variant="ghost" onClick={close}>
             Cancel
           </Button>
           <Button iconStart="check" onClick={() => void save()}>
-            {dir === 'in' ? 'Save income' : 'Save entry'}
+            {isEdit ? 'Save changes' : dir === 'in' ? 'Save income' : 'Save entry'}
           </Button>
         </>
       }
@@ -262,6 +310,8 @@ export function AddEntryDialog() {
           value={spaceId}
           onChange={(e) => onSpace(e.target.value)}
           options={spaceOptions}
+          disabled={isEdit}
+          hint={isEdit ? 'Locked while editing' : undefined}
         />
 
         <SegmentedControl
@@ -343,12 +393,14 @@ export function AddEntryDialog() {
           onChange={(e) => setNote(e.target.value)}
         />
 
-        <Switch
-          label="Recurring monthly"
-          description="Also save this as a monthly commitment"
-          checked={recurring}
-          onChange={(e) => setRecurring(e.target.checked)}
-        />
+        {!isEdit && (
+          <Switch
+            label="Recurring monthly"
+            description="Also save this as a monthly commitment"
+            checked={recurring}
+            onChange={(e) => setRecurring(e.target.checked)}
+          />
+        )}
       </div>
     </Dialog>
   );
