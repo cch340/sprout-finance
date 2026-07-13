@@ -31,7 +31,14 @@ function slug(s: string): string {
 
 function subtitleFor(space: Space, t: Tx): string {
   return [
-    ...secondaryFields(space).map((f) => t.fieldValues[f.key]).filter(Boolean),
+    ...secondaryFields(space)
+      .map((f) => {
+        const v = t.fieldValues[f.key];
+        if (!v) return '';
+        // Date field values render via the short-date formatter; numbers as-is.
+        return f.type === 'date' ? shortDate(v) : v;
+      })
+      .filter(Boolean),
     t.note,
     t.payer && space.group !== 'personal' ? t.payer : '',
   ]

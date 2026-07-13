@@ -33,6 +33,13 @@ export function Dialog({
   ...rest
 }: DialogProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  // Keep the latest onClose in a ref so the effect below can depend only on
+  // `open`. If it depended on `onClose` too, any parent that passes a fresh
+  // arrow each render (e.g. `onClose={() => { commit(); close(); }}`) would make
+  // the effect re-run on every keystroke, and `card.focus()` would yank focus
+  // out of the input the user is typing in — hiding the mobile keyboard.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +59,7 @@ export function Dialog({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -83,7 +90,7 @@ export function Dialog({
       // Restore focus to the trigger when the dialog closes.
       prevFocus?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   const maxW = size === 'sm' ? 380 : size === 'lg' ? 640 : 500;
   return (
@@ -193,7 +200,9 @@ export function Dialog({
               display: 'flex',
               justifyContent: 'flex-end',
               gap: 'var(--space-3)',
-              padding: `var(--space-4) var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom))`,
+              // Bottom base matches the footer's top padding so the gap reads
+              // balanced; safe-area is *added* only on real notched devices.
+              padding: `var(--space-4) var(--space-6) calc(var(--space-4) + env(safe-area-inset-bottom))`,
             }}
           >
             {footer}

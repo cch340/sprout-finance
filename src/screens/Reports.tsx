@@ -10,6 +10,7 @@ import {
   spendByPersonRange,
   spendBySpaceRange,
   topCategoriesRange,
+  UNSPECIFIED,
 } from '../domain/selectors';
 import { monthLabel } from '../domain/format';
 import { useIsDesktop } from '../shell/useIsDesktop';
@@ -51,9 +52,16 @@ function useReportsData(range: Range) {
     const spaceTotal = bySpace.reduce((a, s) => a + s.value, 0);
 
     const byPerson = spendByPersonRange(spaces, txs, months);
-    // Bucket order: the two named people, then Joint.
-    const people = household.people.filter((p) => p.id !== 'leo').slice(0, 2);
-    const buckets = [...people.map((p) => p.name), 'Joint'];
+    // Bucket order: the named people, then each fund space, then Unspecified
+    // (only when some spend is unattributed). Fund keys are the fund's short
+    // label (or name), matching how "Paid from" records fund payers.
+    const people = household.people.filter((p) => p.id !== 'leo').slice(0, 2).map((p) => p.name);
+    const funds = spaces
+      .filter((s) => s.kind === 'fund')
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((s) => s.short ?? s.name);
+    const base = [...people, ...funds];
+    const buckets = (byPerson[UNSPECIFIED] ?? 0) > 0 ? [...base, UNSPECIFIED] : base;
     const personTotal = buckets.reduce((a, b) => a + (byPerson[b] ?? 0), 0);
 
     const top = topCategoriesRange(spaces, txs, months);
@@ -129,19 +137,25 @@ function WhoPaid({ data }: { data: ReturnType<typeof useReportsData> }) {
   const spaces = useAppStore((s) => s.snapshot.spaces);
   const txs = useAppStore((s) => s.snapshot.txs);
   const [openPerson, setOpenPerson] = useState<string | null>(null);
-  const colorOf = (i: number) => PERSON_COLORS[i] ?? 'var(--sage-400)';
+  const colorOf = (key: string, i: number) =>
+    key === UNSPECIFIED ? 'var(--text-subtle)' : PERSON_COLORS[i] ?? 'var(--sage-400)';
+  const labelOf = (key: string) => {
+    if (key === UNSPECIFIED) return 'Unspecified';
+    const fund = spaces.find((s) => s.kind === 'fund' && (s.short ?? s.name) === key);
+    return fund ? fund.name : key;
+  };
 
   return (
     <Card padding="lg">
       <div style={{ display: 'flex', gap: 3, height: 12, borderRadius: 'var(--radius-pill)', overflow: 'hidden', marginBottom: 16, background: 'var(--surface-sunken)' }}>
         {buckets.map((p, i) => (
-          <span key={p} style={{ width: personTotal > 0 ? `${((byPerson[p] ?? 0) / personTotal) * 100}%` : '0%', background: colorOf(i) }} />
+          <span key={p} style={{ width: personTotal > 0 ? `${((byPerson[p] ?? 0) / personTotal) * 100}%` : '0%', background: colorOf(p, i) }} />
         ))}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {buckets.map((p, i) => {
           const open = openPerson === p;
-          const label = p === 'Joint' ? 'Joint Fund' : p;
+          const label = labelOf(p);
           const rows = open ? payerSpaceBreakdown(spaces, txs, months, p) : [];
           return (
             <div key={p}>
@@ -150,7 +164,7 @@ function WhoPaid({ data }: { data: ReturnType<typeof useReportsData> }) {
                 onClick={() => setOpenPerson(open ? null : p)}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', border: 'none', background: 'none', cursor: 'pointer' }}
               >
-                <span style={{ width: 12, height: 12, borderRadius: 4, background: colorOf(i) }} />
+                <span style={{ width: 12, height: 12, borderRadius: 4, background: colorOf(p, i) }} />
                 <span style={{ flex: 1, textAlign: 'left', font: 'var(--font-label)', color: 'var(--text-body)' }}>{label}</span>
                 <Amount value={byPerson[p] ?? 0} />
                 <Icon name={open ? 'chevron-up' : 'chevron-down'} size={16} style={{ color: 'var(--text-subtle)' }} />
