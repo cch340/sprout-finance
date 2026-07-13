@@ -36,7 +36,11 @@ export function Login() {
         if (err) { setError(friendlyError(err.message)); return; }
         await refreshAfterAuth();
       } else {
-        const { data, error: err } = await supabase.auth.signUp({ email: email.trim(), password });
+        const { data, error: err } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
         if (err) { setError(friendlyError(err.message)); return; }
         if (!data.session) {
           setNotice('Check your email to confirm your account, then sign in.');
