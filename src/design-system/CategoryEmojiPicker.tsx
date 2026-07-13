@@ -32,7 +32,7 @@ function tileStyle(selected: boolean): CSSProperties {
     cursor: 'pointer',
     borderRadius: 'var(--radius-md)',
     border: 'none',
-    background: 'var(--neutral-150)',
+    background: 'var(--surface-hover)',
     fontSize: Math.round(TILE * 0.5),
     lineHeight: 1,
     transition: 'box-shadow var(--dur-fast) var(--ease-standard)',
