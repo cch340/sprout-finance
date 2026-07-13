@@ -73,7 +73,7 @@ export function Tabs({
                   style={{
                     font: 'var(--font-caption)',
                     fontWeight: 'var(--fw-semibold)' as CSSProperties['fontWeight'],
-                    background: on ? 'var(--accent-soft)' : 'var(--neutral-150)',
+                    background: on ? 'var(--accent-soft)' : 'var(--surface-hover)',
                     color: on ? 'var(--accent-soft-fg)' : 'var(--text-muted)',
                     borderRadius: 'var(--radius-pill)',
                     padding: '1px 8px',

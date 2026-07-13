@@ -3,7 +3,8 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 export type BadgeTone = 'neutral' | 'accent' | 'income' | 'danger' | 'warning' | 'info';
 
 const tones: Record<BadgeTone, { bg: string; fg: string }> = {
-  neutral: { bg: 'var(--neutral-150)', fg: 'var(--text-body)' },
+  // Semantic surface alias, not a raw neutral — raw neutrals don't flip in dark mode.
+  neutral: { bg: 'var(--surface-hover)', fg: 'var(--text-body)' },
   accent: { bg: 'var(--accent-soft)', fg: 'var(--accent-soft-fg)' },
   income: { bg: 'var(--income-50)', fg: 'var(--income-600)' },
   danger: { bg: 'var(--danger-50)', fg: 'var(--danger-600)' },

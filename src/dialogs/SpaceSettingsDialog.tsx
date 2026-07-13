@@ -34,6 +34,18 @@ function FieldRow({
   onChange: (next: FieldDef) => void;
 }) {
   const [np, setNp] = useState('');
+  // Inline rename — commits on blur/Enter. Only the display label changes;
+  // the field's key (which entry values are stored under) stays stable.
+  const [label, setLabel] = useState(field.label);
+  useEffect(() => setLabel(field.label), [field.label]);
+  const commitLabel = () => {
+    const next = label.trim();
+    if (!next) {
+      setLabel(field.label);
+      return;
+    }
+    if (next !== field.label) onChange({ ...field, label: next });
+  };
   const opts = field.options ?? [];
   const isSelect = field.type === 'select' && opts.length > 0;
   // Presets (which turn a field into a dropdown) only make sense for text/list.
@@ -71,11 +83,20 @@ function FieldRow({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Icon name="tag" size={16} style={{ color: 'var(--text-muted)' }} />
-        <span style={{ flex: 1, font: 'var(--font-label)', color: 'var(--text-strong)' }}>
-          {field.label}
-          {field.primary ? ' · title' : ''}
-        </span>
+        <Icon name="tag" size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Input
+            size="sm"
+            aria-label={`Rename ${field.label}`}
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            onBlur={commitLabel}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            }}
+          />
+        </div>
+        {field.primary && <Badge tone="accent">title</Badge>}
         <Badge tone={isSelect ? 'accent' : 'neutral'}>{typeLabel}</Badge>
         {!field.primary && onRemove && (
           <IconButton icon="x" label="Remove field" variant="ghost" size="sm" onClick={onRemove} />

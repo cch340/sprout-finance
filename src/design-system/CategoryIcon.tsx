@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes } from 'react';
 
-const NEUTRAL = { bg: 'var(--neutral-150)', fg: 'var(--text-muted)' };
+const NEUTRAL = { bg: 'var(--surface-hover)', fg: 'var(--text-muted)' };
 
 interface CatDef {
   emoji: string;
