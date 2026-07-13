@@ -20,7 +20,7 @@ import {
 import type { BadgeTone } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Category, Space, Tx } from '../domain/types';
-import { fundBalance, secondaryFields, spentOf } from '../domain/selectors';
+import { fundBalance, incomeOf, leftThisMonth, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
 import { CarryForwardDialog } from '../dialogs/CarryForwardDialog';
 
@@ -196,18 +196,23 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
   const [budgetDlg, setBudgetDlg] = useState(false);
 
   const isSpend = space.kind === 'spend';
+  const isPersonal = space.kind === 'personal';
   const label =
     space.kind === 'fund'
       ? 'Shared balance'
       : space.kind === 'invest'
         ? `${space.sub ? space.sub + ' · ' : ''}portfolio value`
-        : 'Spent this month';
+        : isPersonal
+          ? 'Left this month'
+          : 'Spent this month';
   const value =
     space.kind === 'fund'
       ? fundBalance(space, snapshot.txs)
       : space.kind === 'invest'
         ? space.value ?? 0
-        : spentOf(space, snapshot.txs, month);
+        : isPersonal
+          ? leftThisMonth(space.id, snapshot.txs, month)
+          : spentOf(space, snapshot.txs, month);
   const budget = space.budget ?? 0;
 
   // Desktop hero is always sage; mobile spend hero is a white card.
@@ -304,6 +309,16 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
         size="hero"
         style={{ display: 'block', marginTop: 4, color: sageCard ? '#fff' : 'var(--sage-700)' }}
       />
+      {isPersonal && (
+        <div style={{ display: 'flex', gap: 18, marginTop: 12 }}>
+          <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
+            Income RM {incomeOf(space.id, snapshot.txs, month).toLocaleString()}
+          </span>
+          <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
+            Spent RM {spentOfPersonal(space.id, snapshot.txs, month).toLocaleString()}
+          </span>
+        </div>
+      )}
       {budgetRow}
       <BudgetDialog
         open={budgetDlg}
