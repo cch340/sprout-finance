@@ -67,8 +67,6 @@ export function Checkbox({
             width: 20,
             height: 20,
             borderRadius: 'var(--radius-xs)',
-            border: '2px solid var(--border-strong)',
-            background: 'var(--surface-card)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -80,7 +78,7 @@ export function Checkbox({
             name="check"
             size={14}
             strokeWidth={3}
-            style={{ opacity: 0, transition: 'opacity var(--dur-fast)' }}
+            style={{ transition: 'opacity var(--dur-fast)' }}
             className="sprout-check-tick"
           />
         </span>
@@ -106,6 +104,8 @@ export function Checkbox({
         </span>
       )}
       <style>{`
+        .sprout-check-box { background: var(--surface-card); border: 2px solid var(--border-strong); }
+        .sprout-check-tick { opacity: 0; }
         .sprout-check-input:checked + .sprout-check-box { background: var(--accent); border-color: var(--accent); }
         .sprout-check-input:checked + .sprout-check-box .sprout-check-tick { opacity: 1; }
         .sprout-check-input:focus-visible + .sprout-check-box { box-shadow: var(--shadow-focus); }
