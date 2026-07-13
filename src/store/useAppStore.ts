@@ -127,7 +127,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const snapshot = await repo.seedDemo(new Date());
     applyTheme(snapshot.settings.theme);
     set({ snapshot, status: 'ready', month: isoMonth(new Date()) });
-    get().showToast('Demo data loaded', 'Sample June ledger');
+    get().showToast('Demo data loaded', 'Your financial report');
   },
 
   async resetAll() {

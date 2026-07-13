@@ -1,0 +1,70 @@
+=== Sprout sheet conversion summary ===
+source: /root/.claude/uploads/406bd9e4-8113-5f24-808b-700cb49756c5/f90d4c0b-Financial_Report_2026.xlsx
+
+Rows converted per space:
+  expenses     81
+  housing      16
+  car          22
+  investment   14
+  joint        6
+  ch           65
+  jc           6
+  TOTAL txs    210
+
+Personal income/expense: CH in=10 out=55; JC in=0 out=6
+Investment portfolio value (sum of all AIA payments) = 90629.11
+
+Joint Fund reconciliation:
+  carry forward from 2025 (baseBalance) = 1338.53
+  paid contributions (in)               = 13820.0
+  live fund balance = base + in - out   = 15158.53
+  sheet 'Total Joint Fund'              = 15158.53
+  match: True
+
+Skipped rows / decisions:
+  [Expenses]
+    - row 82: totals row RM11751.66 skipped
+  [TreeO]
+    - row 1: 'Carry forwarded from year 2025' RM46013.81 carry-forward -> skipped (not a real expense; Housing is a spend space)
+    - right block ignored (only placeholder 'Retail/example' RM0.0)
+  [Car]
+    - Alza loan: CLOSED row skipped
+  [Joint Fund]
+    - JC 2026-06-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-07-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-08-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-09-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-10-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-11-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - JC 2026-12-01 RM2270.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-02-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-03-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-04-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-05-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-06-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-07-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-08-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-09-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-10-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-11-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+    - CH 2026-12-01 RM2470.0 not transferred -> omitted from fund ledger (would inflate live balance; sheet Total counts paid only)
+
+Ignored sheets: Sheet5 (scratch tab).
+
+Mapping judgment calls:
+  - Everyday budget kept at 1500 (Money breakdown Food=600 too narrow; Everyday
+    also covers baby/shopping). Housing budget = 2090 (Money breakdown House total).
+  - Car budget kept at 800 (no monthly figure in sheet).
+  - Expenses category order: baby > grocery > meals > shopping > other, so
+    'Leo shirt' -> baby (child spend), 'New year clothes' -> shopping.
+  - Expenses trailing rows without a date inherit the last seen date (2026-06-17).
+  - Vendor blank -> title 'Retail'; location '-' dropped.
+  - TreeO 'Carry forwarded from year 2025' RM46013.81 NOT recorded as an expense.
+  - Car: RM36474.31 (2025-12-31 Myvi) and RM34520 (Alza) kept as real settlement
+    payments, note 'Loan settlement'. Alza 'CLOSED' rows skipped.
+  - Investment payments recorded dir:'out' (cost basis), payer JC/CH.
+  - Joint Fund: JC=left(2270), CH=right(2470) per prompt. Only transferred (paid)
+    rows emitted as 'in' so live balance reconciles to the sheet Total 15158.53;
+    future/untransferred months omitted (they'd double-count money not yet in).
+  - Personal: month date in col A carries down; income & expense both dated the
+    1st of that month. JC salary is blank in the sheet -> JC has no income entry.

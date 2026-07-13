@@ -1,3 +1,9 @@
+// UNIT-TEST FIXTURE ONLY — not wired into the app. The app's "Load demo data"
+// actions seed the user's real spreadsheet via seed-sheet.ts (buildSheetSeed).
+// This module is retained because selectors.test.ts asserts buildSeed's totals;
+// it also still exports the shared SPACE_TEMPLATES / templateToSpace / personalSpace
+// helpers reused by seed-sheet.ts and the onboarding flow. Keep it green.
+//
 // Demo seed — ports the prototype's June 2026 ledger (data.js) into the typed
 // model. The prototype's "current" month is mapped onto the real current month;
 // five prior months are synthesized so history() returns the same trend shape.
