@@ -23,7 +23,6 @@ import { fundBalance, secondaryFields, spentOf } from '../domain/selectors';
 import { shortDate } from '../domain/format';
 import { useIsDesktop } from '../shell/useIsDesktop';
 
-const inMonth = (t: Tx, month: string) => t.date.slice(0, 7) === month;
 const byDateDesc = (a: Tx, b: Tx) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
 function slug(s: string): string {
@@ -309,7 +308,6 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
 // ---- activity ------------------------------------------------------------
 function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
-  const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
   const [cat, setCat] = useState('all');
   const [edit, setEdit] = useState(false);
@@ -321,11 +319,15 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     setEdit(false);
   }, [space.id]);
 
+  // The space ledger shows the FULL history (all months), not just the current
+  // month: back-dated entries must remain reachable somewhere, and the app has
+  // no month switcher. Month-scoped roll-ups (Hero "spent this month", Home,
+  // Reports) stay parameterized by `month`, so they are unaffected by this list.
   const list = useMemo(() => {
-    let l = snapshot.txs.filter((t) => t.spaceId === space.id && inMonth(t, month));
+    let l = snapshot.txs.filter((t) => t.spaceId === space.id);
     if (cat !== 'all') l = l.filter((t) => t.cat === cat);
     return l.slice().sort(byDateDesc);
-  }, [snapshot.txs, space.id, month, cat]);
+  }, [snapshot.txs, space.id, cat]);
 
   const removeCat = (key: string) => {
     void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
@@ -409,7 +411,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
       <Card padding="sm">
         {list.length === 0 ? (
           <div style={{ padding: 'var(--space-8)', textAlign: 'center', font: 'var(--font-body)', color: 'var(--text-muted)' }}>
-            No entries yet this month.
+            No entries yet.
           </div>
         ) : (
           list.map((t, i) => (
@@ -458,8 +460,24 @@ function RecurringPanel({ space }: { space: Space }) {
       </div>
       <Card padding="sm">
         {items.length === 0 && !edit && (
-          <div style={{ padding: 'var(--space-8)', textAlign: 'center', font: 'var(--font-body)', color: 'var(--text-muted)' }}>
-            No commitments yet.
+          <div
+            style={{
+              padding: 'var(--space-8) var(--space-5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 'var(--space-4)',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ font: 'var(--font-body)', color: 'var(--text-muted)', margin: 0, maxWidth: 260 }}>
+              {isFund
+                ? 'No contributions yet. Add the amounts that build this fund each month.'
+                : 'No recurring items yet. Add the fixed amounts that repeat every month.'}
+            </p>
+            <Button variant="secondary" iconStart="plus" onClick={() => setDlg(true)}>
+              {isFund ? 'Add contribution' : 'Add recurring'}
+            </Button>
           </div>
         )}
         {items.map((r) => (
@@ -520,11 +538,14 @@ export function SpaceDetail() {
     );
   }
 
-  const hasRecurring = snapshot.recurring.some((r) => r.spaceId === space.id);
+  // Spend/fund/invest spaces all support recurring items — always offer the
+  // toggle so the first item is discoverable (and creatable from its empty
+  // state), even before any recurring item exists. Personal spaces don't.
+  const supportsRecurring = space.kind !== 'personal';
 
   const panels = (
     <>
-      {hasRecurring ? (
+      {supportsRecurring ? (
         <>
           <SegmentedControl
             fullWidth={!isDesktop}
