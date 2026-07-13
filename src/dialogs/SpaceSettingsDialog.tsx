@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
+  CategoryEmojiPicker,
   CategoryIcon,
   Dialog,
   Icon,
@@ -121,6 +122,7 @@ export function SpaceSettingsDialog() {
 
   const [name, setName] = useState('');
   const [newCat, setNewCat] = useState('');
+  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
   const [newField, setNewField] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldDef['type']>('text');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -128,6 +130,7 @@ export function SpaceSettingsDialog() {
   useEffect(() => {
     if (space) setName(space.name);
     setNewCat('');
+    setNewEmoji(undefined);
     setNewField('');
     setNewFieldType('text');
     setConfirmDelete(false);
@@ -148,10 +151,12 @@ export function SpaceSettingsDialog() {
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
     if (!cats.some((c) => c.key === key)) {
-      const next: Category[] = [...cats, { key, label }];
+      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+      const next: Category[] = [...cats, c];
       void updateSpace(space.id, { cats: next });
     }
     setNewCat('');
+    setNewEmoji(undefined);
   };
   const removeCat = (key: string) => {
     void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
@@ -221,6 +226,7 @@ export function SpaceSettingsDialog() {
                 <Tag key={c.key} onRemove={() => removeCat(c.key)}>
                   <CategoryIcon
                     category={c.key}
+                    emoji={c.emoji}
                     size={18}
                     radius="var(--radius-xs)"
                     style={{ marginRight: 4 }}
@@ -243,6 +249,7 @@ export function SpaceSettingsDialog() {
               Add
             </Button>
           </div>
+          <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} />
         </div>
 
         {/* fields */}

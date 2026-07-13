@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Amount,
   Avatar,
+  Button,
   Card,
   CategoryIcon,
   ListRow,
@@ -10,11 +12,12 @@ import {
   StatCard,
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
-import type { Tx } from '../domain/types';
+import type { Category, Tx } from '../domain/types';
 import { incomeOf, leftThisMonth, spentOfPersonal } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
 import { useIsDesktop } from '../shell/useIsDesktop';
 
+const PAGE = 30;
 const inMonth = (t: Tx, month: string) => t.date.slice(0, 7) === month;
 const byDateDesc = (a: Tx, b: Tx) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
@@ -26,11 +29,11 @@ function EmptyLine({ children }: { children: string }) {
   );
 }
 
-function txRows(list: Tx[]) {
+function txRows(list: Tx[], cats: Category[]) {
   return list.map((t, i) => (
     <ListRow
       key={t.id}
-      leading={<CategoryIcon category={t.cat} />}
+      leading={<CategoryIcon category={t.cat} emoji={cats.find((c) => c.key === t.cat)?.emoji} />}
       title={t.title}
       subtitle={t.note}
       trailing={
@@ -53,6 +56,11 @@ export function Personal() {
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
   const { spaces, txs } = snapshot;
+
+  // Incremental "show more": render the first PAGE rows, reveal PAGE more at a
+  // time. Reset the chunk when the viewed person or month changes.
+  const [visible, setVisible] = useState(PAGE);
+  useEffect(() => setVisible(PAGE), [who, month]);
 
   const people = spaces
     .filter((s) => s.kind === 'personal')
@@ -84,10 +92,25 @@ export function Personal() {
     </Card>
   );
 
+  const shown = list.slice(0, visible);
   const ledger = (
-    <Card padding="sm">
-      {list.length === 0 ? <EmptyLine>No entries yet this month.</EmptyLine> : txRows(list)}
-    </Card>
+    <>
+      <Card padding="sm">
+        {list.length === 0 ? <EmptyLine>No entries yet this month.</EmptyLine> : txRows(shown, person.cats)}
+      </Card>
+      {list.length > PAGE && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+          {visible < list.length && (
+            <Button variant="soft" onClick={() => setVisible((v) => v + PAGE)}>
+              Show more
+            </Button>
+          )}
+          <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+            Showing {Math.min(visible, list.length)} of {list.length}
+          </span>
+        </div>
+      )}
+    </>
   );
 
   if (isDesktop) {

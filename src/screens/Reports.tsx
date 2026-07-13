@@ -205,7 +205,7 @@ function TopCategories({ data }: { data: ReturnType<typeof useReportsData> }) {
           key={t.cat}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', borderBottom: i < top.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
         >
-          <CategoryIcon category={t.cat} size={36} />
+          <CategoryIcon category={t.cat} emoji={t.emoji} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ font: 'var(--font-body)', fontWeight: 'var(--fw-semibold)', color: 'var(--text-strong)' }}>{t.label}</div>
             <div style={{ height: 5, borderRadius: 'var(--radius-pill)', background: 'var(--neutral-200)', marginTop: 5 }}>

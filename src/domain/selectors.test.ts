@@ -55,6 +55,18 @@ describe('roll-ups', () => {
       expect(top[i - 1].value).toBeGreaterThanOrEqual(top[i].value);
     }
   });
+
+  it('topCategories surfaces a category custom emoji when set', () => {
+    const spaces = snap.spaces.map((s) =>
+      s.id === 'expenses'
+        ? { ...s, cats: s.cats.map((c) => (c.key === 'grocery' ? { ...c, emoji: '☕' } : c)) }
+        : s,
+    );
+    const top = topCategories(spaces, snap.txs, MONTH);
+    expect(top.find((t) => t.cat === 'grocery')?.emoji).toBe('☕');
+    // categories without a custom emoji stay undefined (keyed-glyph fallback)
+    expect(top.find((t) => t.cat === 'installment')?.emoji).toBeUndefined();
+  });
 });
 
 describe('personal spaces', () => {

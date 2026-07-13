@@ -81,6 +81,8 @@ export interface CategorySpend {
   cat: string;
   label: string;
   value: number;
+  /** Explicit custom emoji if the category defines one; else undefined. */
+  emoji?: string;
 }
 
 /** Top spending categories across shared spend spaces (default top 5). */
@@ -92,13 +94,15 @@ export function topCategories(
 ): CategorySpend[] {
   const agg = new Map<string, CategorySpend>();
   for (const space of spendSpaces(spaces)) {
-    const labelOf = (cat: string) =>
-      space.cats.find((c) => c.key === cat)?.label ?? cat;
+    const defOf = (cat: string) => space.cats.find((c) => c.key === cat);
     for (const t of spaceTxs(space.id, txs, month)) {
       if (t.dir === 'in') continue;
       const cur = agg.get(t.cat);
       if (cur) cur.value += t.amount;
-      else agg.set(t.cat, { cat: t.cat, label: labelOf(t.cat), value: t.amount });
+      else {
+        const d = defOf(t.cat);
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+      }
     }
   }
   return [...agg.values()].sort((a, b) => b.value - a.value).slice(0, limit);
@@ -241,12 +245,15 @@ export function topCategoriesRange(
   const set = new Set(months);
   const agg = new Map<string, CategorySpend>();
   for (const space of spendSpaces(spaces)) {
-    const labelOf = (cat: string) => space.cats.find((c) => c.key === cat)?.label ?? cat;
+    const defOf = (cat: string) => space.cats.find((c) => c.key === cat);
     for (const t of txs) {
       if (t.spaceId !== space.id || !inMonths(t, set) || t.dir === 'in') continue;
       const cur = agg.get(t.cat);
       if (cur) cur.value += t.amount;
-      else agg.set(t.cat, { cat: t.cat, label: labelOf(t.cat), value: t.amount });
+      else {
+        const d = defOf(t.cat);
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+      }
     }
   }
   return [...agg.values()].sort((a, b) => b.value - a.value).slice(0, limit);
@@ -255,6 +262,15 @@ export function topCategoriesRange(
 /** Non-primary fields of a space (shown as secondary row detail). */
 export function secondaryFields(space: Space) {
   return (space.fields ?? []).filter((f) => !f.primary);
+}
+
+/**
+ * Resolve a category's explicit custom emoji (if the user picked one) for a tx
+ * in a given space. Returns undefined so CategoryIcon falls back to its keyed
+ * glyph / neutral tile.
+ */
+export function catEmojiOf(spaces: Space[], spaceId: string, catKey: string): string | undefined {
+  return spaces.find((s) => s.id === spaceId)?.cats.find((c) => c.key === catKey)?.emoji || undefined;
 }
 
 /** Number of ledger entries for a space (optionally scoped to a month). */

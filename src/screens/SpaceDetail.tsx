@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Card,
+  CategoryEmojiPicker,
   CategoryIcon,
   Dialog,
   IconButton,
@@ -20,7 +21,9 @@ import type { BadgeTone } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Category, Space, Tx } from '../domain/types';
 import { fundBalance, secondaryFields, spentOf } from '../domain/selectors';
-import { shortDate } from '../domain/format';
+import { monthLabel, shortDate } from '../domain/format';
+
+const PAGE = 30;
 import { useIsDesktop } from '../shell/useIsDesktop';
 
 const byDateDesc = (a: Tx, b: Tx) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
@@ -317,24 +320,42 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const updateSpace = useAppStore((s) => s.updateSpace);
   const [cat, setCat] = useState('all');
+  const [monthSel, setMonthSel] = useState('all');
   const [edit, setEdit] = useState(false);
   const [newCat, setNewCat] = useState('');
+  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
+  const [visible, setVisible] = useState(PAGE);
 
   const cats = space.cats;
   useEffect(() => {
     setCat('all');
+    setMonthSel('all');
     setEdit(false);
   }, [space.id]);
 
-  // The space ledger shows the FULL history (all months), not just the current
-  // month: back-dated entries must remain reachable somewhere, and the app has
-  // no month switcher. Month-scoped roll-ups (Hero "spent this month", Home,
-  // Reports) stay parameterized by `month`, so they are unaffected by this list.
+  // Months that actually have entries in this space (newest first), for the
+  // month filter. Derived purely from tx dates — no store persistence.
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
+    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    return [{ value: 'all', label: 'All months' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
+  }, [snapshot.txs, space.id]);
+
+  // The space ledger shows the FULL history (all months) by default; the month
+  // Select narrows it. Month-scoped roll-ups (Hero "spent this month", Home,
+  // Reports) stay parameterized by `month`, unaffected by this view state.
   const list = useMemo(() => {
     let l = snapshot.txs.filter((t) => t.spaceId === space.id);
     if (cat !== 'all') l = l.filter((t) => t.cat === cat);
+    if (monthSel !== 'all') l = l.filter((t) => t.date.slice(0, 7) === monthSel);
     return l.slice().sort(byDateDesc);
-  }, [snapshot.txs, space.id, cat]);
+  }, [snapshot.txs, space.id, cat, monthSel]);
+
+  // Incremental "show more": render the first N matching rows, reveal PAGE more
+  // at a time. Reset the chunk whenever the filters or space change.
+  useEffect(() => setVisible(PAGE), [space.id, cat, monthSel]);
+  const shown = list.slice(0, visible);
 
   const removeCat = (key: string) => {
     void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
@@ -345,9 +366,11 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
     if (!cats.some((c) => c.key === key)) {
-      void updateSpace(space.id, { cats: [...cats, { key, label }] });
+      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+      void updateSpace(space.id, { cats: [...cats, c] });
     }
     setNewCat('');
+    setNewEmoji(undefined);
   };
 
   return (
@@ -385,7 +408,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
                 onClick={edit ? undefined : () => setCat(c.key)}
                 onRemove={edit ? () => removeCat(c.key) : undefined}
               >
-                <CategoryIcon category={c.key} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
+                <CategoryIcon category={c.key} emoji={c.emoji} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
                 {c.label}
               </Tag>
             ))}
@@ -413,6 +436,25 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
               />
             )}
           </div>
+          {edit && (
+            <div style={{ marginTop: 10 }}>
+              <span style={{ display: 'block', font: 'var(--font-caption)', color: 'var(--text-muted)', margin: '0 4px 6px' }}>
+                Pick an emoji for the new category
+              </span>
+              <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} style={{ padding: '0 4px' }} />
+            </div>
+          )}
+        </div>
+      )}
+      {monthOptions.length > 1 && (
+        <div style={{ maxWidth: 200 }}>
+          <Select
+            size="sm"
+            aria-label="Filter by month"
+            value={monthSel}
+            onChange={(e) => setMonthSel(e.target.value)}
+            options={monthOptions}
+          />
         </div>
       )}
       <Card padding="sm">
@@ -421,21 +463,33 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
             No entries yet.
           </div>
         ) : (
-          list.map((t, i) => (
+          shown.map((t, i) => (
             <ListRow
               key={t.id}
-              leading={<CategoryIcon category={t.cat} />}
+              leading={<CategoryIcon category={t.cat} emoji={cats.find((c) => c.key === t.cat)?.emoji} />}
               title={t.title}
               subtitle={subtitleFor(space, t)}
               trailing={
                 <Amount value={t.amount} kind={t.dir === 'in' ? 'in' : 'neutral'} showSign={t.dir === 'in'} />
               }
               meta={statusMeta(t)}
-              divider={i < list.length - 1}
+              divider={i < shown.length - 1}
             />
           ))
         )}
       </Card>
+      {list.length > PAGE && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
+          {visible < list.length && (
+            <Button variant="soft" onClick={() => setVisible((v) => v + PAGE)}>
+              Show more
+            </Button>
+          )}
+          <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+            Showing {Math.min(visible, list.length)} of {list.length}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -490,7 +544,7 @@ function RecurringPanel({ space }: { space: Space }) {
         {items.map((r) => (
           <ListRow
             key={r.id}
-            leading={<CategoryIcon category={r.cat} />}
+            leading={<CategoryIcon category={r.cat} emoji={space.cats.find((c) => c.key === r.cat)?.emoji} />}
             title={r.label}
             trailing={
               edit ? (
