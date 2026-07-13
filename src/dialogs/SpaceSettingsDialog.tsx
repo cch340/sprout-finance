@@ -236,7 +236,9 @@ export function SpaceSettingsDialog() {
               onBlur={commitName}
             />
 
-            {/* danger zone */}
+            {/* danger zone — personal ledgers belong to household members and
+                can't be deleted from here. */}
+            {space.kind !== 'personal' && (
             <div
               style={{
                 display: 'flex',
@@ -267,6 +269,7 @@ export function SpaceSettingsDialog() {
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
 

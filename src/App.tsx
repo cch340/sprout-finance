@@ -10,7 +10,6 @@ import { AppShell } from './shell/AppShell';
 import { Home } from './screens/Home';
 import { Spaces } from './screens/Spaces';
 import { SpaceDetail } from './screens/SpaceDetail';
-import { Personal } from './screens/Personal';
 import { Onboarding } from './screens/Onboarding';
 import { Login } from './screens/Login';
 import { Reports } from './screens/Reports';
@@ -101,7 +100,9 @@ function Router() {
           <Route path="/" element={<Home />} />
           <Route path="/spaces" element={<Spaces />} />
           <Route path="/spaces/:id" element={<SpaceDetail />} />
-          <Route path="/personal/:who" element={<Personal />} />
+          {/* Personal ledgers use the same space-detail screen as shared spaces
+              (back button, settings, filters, carry forward) — only the hero differs. */}
+          <Route path="/personal/:id" element={<SpaceDetail />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
