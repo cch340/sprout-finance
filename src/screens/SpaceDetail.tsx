@@ -22,6 +22,7 @@ import { useAppStore } from '../store/useAppStore';
 import type { Category, Space, Tx } from '../domain/types';
 import { fundBalance, secondaryFields, spentOf } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
+import { CarryForwardDialog } from '../dialogs/CarryForwardDialog';
 
 const PAGE = 30;
 import { useIsDesktop } from '../shell/useIsDesktop';
@@ -318,6 +319,7 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
 // ---- activity ------------------------------------------------------------
 function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
+  const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
   const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   // Multi-select category filter: an empty set means "All".
@@ -327,6 +329,8 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const [newCat, setNewCat] = useState('');
   const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
   const [visible, setVisible] = useState(PAGE);
+  // Carry-forward dialog: null closed; otherwise the source/target months to prefill.
+  const [carry, setCarry] = useState<{ source?: string; target?: string } | null>(null);
 
   const cats = space.cats;
   const toggleCat = (key: string) =>
@@ -365,6 +369,20 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // at a time. Reset the chunk whenever the filters or space change.
   useEffect(() => setVisible(PAGE), [space.id, catSel, monthSel]);
   const shown = list.slice(0, visible);
+
+  // Carry forward: entries that can be duplicated into another month (fund
+  // "paid from" mirrors are excluded — they belong to an expense elsewhere).
+  const carryable = useMemo(
+    () => snapshot.txs.filter((t) => t.spaceId === space.id && !(space.kind === 'fund' && t.linkId)),
+    [snapshot.txs, space.id, space.kind],
+  );
+  const latestMonth = useMemo(() => {
+    let latest = '';
+    for (const t of carryable) if (t.date.slice(0, 7) > latest) latest = t.date.slice(0, 7);
+    return latest;
+  }, [carryable]);
+  const currentMonthHasEntries = carryable.some((t) => t.date.slice(0, 7) === month);
+  const showCarryBanner = carryable.length > 0 && !currentMonthHasEntries && latestMonth && latestMonth !== month;
 
   const removeCat = (key: string) => {
     void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
@@ -455,15 +473,48 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           )}
         </div>
       )}
-      {monthOptions.length > 1 && (
-        <div style={{ maxWidth: 200 }}>
-          <Select
-            size="sm"
-            aria-label="Filter by month"
-            value={monthSel}
-            onChange={(e) => setMonthSel(e.target.value)}
-            options={monthOptions}
-          />
+      {showCarryBanner && (
+        <Card padding="sm" style={{ background: 'var(--surface-sunken)', border: '1px dashed var(--border-strong)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-1)' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ font: 'var(--font-label)', color: 'var(--text-strong)' }}>
+                Nothing in {monthLabel(month)} yet
+              </div>
+              <div style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                Carry your entries forward from {monthLabel(latestMonth)}.
+              </div>
+            </div>
+            <Button variant="secondary" size="sm" iconStart="repeat" onClick={() => setCarry({ source: latestMonth, target: month })}>
+              Carry forward
+            </Button>
+          </div>
+        </Card>
+      )}
+      {(monthOptions.length > 1 || (carryable.length > 0 && !showCarryBanner)) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', justifyContent: 'space-between' }}>
+          {monthOptions.length > 1 ? (
+            <div style={{ maxWidth: 200, flex: 1 }}>
+              <Select
+                size="sm"
+                aria-label="Filter by month"
+                value={monthSel}
+                onChange={(e) => setMonthSel(e.target.value)}
+                options={monthOptions}
+              />
+            </div>
+          ) : (
+            <span />
+          )}
+          {carryable.length > 0 && !showCarryBanner && (
+            <Button
+              variant="ghost"
+              size="sm"
+              iconStart="repeat"
+              onClick={() => setCarry({ source: monthSel !== 'all' ? monthSel : latestMonth, target: month })}
+            >
+              Carry forward
+            </Button>
+          )}
         </div>
       )}
       <Card padding="sm">
@@ -500,6 +551,13 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           </span>
         </div>
       )}
+      <CarryForwardDialog
+        open={carry !== null}
+        onClose={() => setCarry(null)}
+        space={space}
+        defaultSource={carry?.source}
+        defaultTarget={carry?.target}
+      />
     </div>
   );
 }

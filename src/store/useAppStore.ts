@@ -115,6 +115,8 @@ export interface AppState {
   updateEntry: (id: string, edit: EntryEdit) => Promise<void>;
   /** Delete an entry and its linked fund mirror (either direction). */
   deleteEntry: (id: string) => Promise<void>;
+  /** Bulk-duplicate ledger entries into another month (Carry forward). Returns count added. */
+  carryForward: (drafts: Omit<Tx, 'id'>[]) => Promise<number>;
   addSpace: (space: Omit<Space, 'sortOrder'> & { sortOrder?: number }) => Promise<Space>;
   updateSpace: (id: string, patch: Partial<Space>) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
@@ -368,6 +370,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!(await guardWrite(get, () => repo.deleteTxs(ids)))) return;
     commitSnapshot(get, set, { txs: snapshot.txs.filter((t) => !ids.includes(t.id)) });
     get().showToast('Entry deleted');
+  },
+
+  async carryForward(drafts) {
+    if (drafts.length === 0) return 0;
+    // Fresh standalone rows in the target month — links are intentionally NOT
+    // copied, so carrying forward a "paid from fund" expense never silently
+    // re-deducts a fund balance. All rows go in one cloud write.
+    const txs: Tx[] = drafts.map((d) => ({ ...d, id: repo.newId('tx') }));
+    if (!(await guardWrite(get, () => repo.addTxs(txs)))) return 0;
+    const { snapshot } = get();
+    commitSnapshot(get, set, { txs: [...txs, ...snapshot.txs] });
+    const n = txs.length;
+    get().showToast(`Carried forward ${n} ${n === 1 ? 'entry' : 'entries'}`);
+    return n;
   },
 
   async addSpace(space) {
