@@ -202,6 +202,17 @@ function HeroCard({ desktop = false }: { desktop?: boolean }) {
 function BalanceCards({ column = false }: { column?: boolean }) {
   const { snapshot, fund, invest } = useHomeData();
   const fundValue = fund ? fundBalance(fund, snapshot.txs) : 0;
+  // Mobile shows the pair two-up. With five-figure balances (RM 90,629.11) the
+  // xl amount overflows a ~150px cell at 360–412px, so the mobile cells shrink
+  // the amount (lg), min-width:0 lets grid cells narrow, tighter padding buys
+  // room, and labels ellipsis instead of pushing the icon out.
+  const mobile = !column;
+  const cellStyle: CSSProperties | undefined = mobile
+    ? { minWidth: 0, padding: 'var(--space-4)' }
+    : undefined;
+  const amtProps = mobile
+    ? { style: SAGE, size: 'lg' as const }
+    : { style: SAGE };
   return (
     <div
       style={
@@ -215,14 +226,16 @@ function BalanceCards({ column = false }: { column?: boolean }) {
         value={fundValue}
         icon="wallet"
         footer="Shared balance"
-        amountProps={{ style: SAGE }}
+        amountProps={amtProps}
+        style={cellStyle}
       />
       <StatCard
         label={invest?.sub ? `Investment · ${invest.sub}` : 'Investment'}
         value={invest?.value ?? 0}
         icon="trending-up"
         footer="Portfolio value"
-        amountProps={{ style: SAGE }}
+        amountProps={amtProps}
+        style={cellStyle}
       />
     </div>
   );

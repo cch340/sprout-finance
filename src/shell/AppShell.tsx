@@ -13,6 +13,7 @@ import { monthLabel } from '../domain/format';
 import { AddEntryDialog } from '../dialogs/AddEntryDialog';
 import { NewSpaceDialog } from '../dialogs/NewSpaceDialog';
 import { SpaceSettingsDialog } from '../dialogs/SpaceSettingsDialog';
+import { EntryDetailDialog } from '../dialogs/EntryDetailDialog';
 import { useIsDesktop } from './useIsDesktop';
 import markUrl from '../assets/sprout-mark.svg';
 import './shell.css';
@@ -118,6 +119,7 @@ function MobileShell() {
       <AddEntryDialog />
       <NewSpaceDialog />
       <SpaceSettingsDialog />
+      <EntryDetailDialog />
     </div>
   );
 }
@@ -329,6 +331,7 @@ function DesktopShell() {
       <AddEntryDialog />
       <NewSpaceDialog />
       <SpaceSettingsDialog />
+      <EntryDetailDialog />
     </div>
   );
 }

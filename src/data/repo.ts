@@ -11,6 +11,7 @@ import {
 import type {
   Household, RecurringItem, Settings, Snapshot, Space, Tx,
 } from '../domain/types';
+import type { MirrorAction } from '../domain/entry-links';
 
 /** Load every table into a single Snapshot. Missing singletons fall back to defaults. */
 export async function loadSnapshot(): Promise<Snapshot> {
@@ -45,6 +46,33 @@ export async function updateTx(id: string, patch: Partial<Tx>): Promise<void> {
 }
 export async function deleteTx(id: string): Promise<void> {
   await db.txs.delete(id);
+}
+/** Delete several txs atomically (an entry plus its linked fund mirror). */
+export async function deleteTxs(ids: string[]): Promise<void> {
+  await db.transaction('rw', db.txs, async () => {
+    await db.txs.bulkDelete(ids);
+  });
+}
+/**
+ * Apply an entry edit atomically: patch the origin tx and reconcile its fund
+ * mirror (create / update / delete / none) in a single Dexie transaction.
+ */
+export async function applyEntryUpdate(
+  originId: string,
+  originPatch: Partial<Tx>,
+  mirror: MirrorAction,
+): Promise<void> {
+  await db.transaction('rw', db.txs, async () => {
+    await db.txs.update(originId, originPatch);
+    if (mirror.kind === 'update' && mirror.id) {
+      await db.txs.update(mirror.id, mirror.patch ?? {});
+    } else if (mirror.kind === 'delete' && mirror.id) {
+      await db.txs.delete(mirror.id);
+    } else if (mirror.kind === 'create' && mirror.create) {
+      if (mirror.removeId) await db.txs.delete(mirror.removeId);
+      await db.txs.add(mirror.create);
+    }
+  });
 }
 
 // ---- spaces --------------------------------------------------------------
