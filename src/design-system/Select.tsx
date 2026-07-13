@@ -118,7 +118,12 @@ export function Select({
           {error || hint}
         </span>
       )}
-      <style>{`.sprout-select-wrap:focus-within { border-color: var(--ring-focus) !important; box-shadow: var(--shadow-focus); }`}</style>
+      <style>{`
+        .sprout-select-wrap:focus-within { border-color: var(--ring-focus) !important; box-shadow: var(--shadow-focus); }
+        /* The native option popup ignores the control's color-scheme on some
+           browsers; paint it explicitly so dark mode isn't light-on-light. */
+        .sprout-select-wrap select option { background-color: var(--surface-raised); color: var(--text-strong); }
+      `}</style>
     </div>
   );
 }
