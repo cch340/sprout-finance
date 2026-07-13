@@ -14,6 +14,7 @@ import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Space, Tx } from '../domain/types';
 import {
+  catEmojiOf,
   entryCount,
   fundBalance,
   spendSpaces as selSpendSpaces,
@@ -259,6 +260,7 @@ function MobileHome() {
   const navigate = useNavigate();
   const { snapshot, month, spendList, txs, recent } = useHomeData();
   const people = snapshot.household.people;
+  const spaces = snapshot.spaces;
   const name = people[0]?.name ?? 'there';
 
   return (
@@ -320,7 +322,7 @@ function MobileHome() {
             recent.map((e, i) => (
               <ListRow
                 key={e.id}
-                leading={<CategoryIcon category={e.cat} />}
+                leading={<CategoryIcon category={e.cat} emoji={catEmojiOf(spaces, e.spaceId, e.cat)} />}
                 title={e.title}
                 subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
                 trailing={<Amount value={e.amount} />}
@@ -340,7 +342,7 @@ function MobileHome() {
 // ============================================================
 function DesktopOverview() {
   const navigate = useNavigate();
-  const { recent, bills } = useHomeData();
+  const { recent, bills, spaces } = useHomeData();
 
   return (
     <>
@@ -359,7 +361,7 @@ function DesktopOverview() {
               recent.map((e, i) => (
                 <ListRow
                   key={e.id}
-                  leading={<CategoryIcon category={e.cat} />}
+                  leading={<CategoryIcon category={e.cat} emoji={catEmojiOf(spaces, e.spaceId, e.cat)} />}
                   title={e.title}
                   subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
                   trailing={<Amount value={e.amount} />}
@@ -379,7 +381,7 @@ function DesktopOverview() {
               bills.map((c, i) => (
                 <ListRow
                   key={c.id}
-                  leading={<CategoryIcon category={c.cat} />}
+                  leading={<CategoryIcon category={c.cat} emoji={catEmojiOf(spaces, c.spaceId, c.cat)} />}
                   title={c.title}
                   subtitle={`Paid by ${c.payer || 'Unspecified'}`}
                   trailing={<Amount value={c.amount} />}

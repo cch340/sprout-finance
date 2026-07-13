@@ -17,6 +17,9 @@ export type { CardProps, CardPadding, CardRadius } from './Card';
 export { CategoryIcon, categoryKeys } from './CategoryIcon';
 export type { CategoryIconProps } from './CategoryIcon';
 
+export { CategoryEmojiPicker, CATEGORY_EMOJI } from './CategoryEmojiPicker';
+export type { CategoryEmojiPickerProps } from './CategoryEmojiPicker';
+
 export { ListRow } from './ListRow';
 export type { ListRowProps } from './ListRow';
 

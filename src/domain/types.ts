@@ -28,6 +28,12 @@ export interface FieldDef {
 export interface Category {
   key: string;
   label: string;
+  /**
+   * Optional explicit emoji glyph chosen by the user. Takes precedence over the
+   * key→glyph map in CategoryIcon; when absent, seeded categories fall back to
+   * their keyed glyph and unknown keys to the neutral fallback tile.
+   */
+  emoji?: string;
 }
 
 export interface Space {
