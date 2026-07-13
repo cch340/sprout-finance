@@ -2,7 +2,9 @@
 // All reads/writes go through here; the store holds an in-memory Snapshot.
 
 import { db } from './db';
-import { buildSeed } from './seed-demo';
+// The app seeds the user's REAL spreadsheet data (seed-sheet, built by
+// scripts/convert-sheet.py). seed-demo.ts stays as the unit-test fixture only.
+import { buildSheetSeed } from './seed-sheet';
 import {
   DEFAULT_HOUSEHOLD, DEFAULT_SETTINGS, HOUSEHOLD_ID, SETTINGS_ID,
 } from '../domain/types';
@@ -89,9 +91,9 @@ export async function resetAll(): Promise<void> {
   });
 }
 
-/** Wipe everything and write the demo ledger. Returns the seeded snapshot. */
+/** Wipe everything and write the real spreadsheet seed. Returns the snapshot. */
 export async function seedDemo(ref: Date = new Date()): Promise<Snapshot> {
-  const snap = buildSeed(ref);
+  const snap = buildSheetSeed(ref);
   await db.transaction('rw', db.spaces, db.txs, db.recurring, db.household, db.settings, async () => {
     await Promise.all([
       db.spaces.clear(), db.txs.clear(), db.recurring.clear(),

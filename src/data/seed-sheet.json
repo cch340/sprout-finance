@@ -1,0 +1,3069 @@
+{
+  "_generated": "scripts/convert-sheet.py from Financial_Report_2026.xlsx — DO NOT EDIT BY HAND",
+  "spaceOverrides": {
+    "housing": {
+      "budget": 2090
+    },
+    "investment": {
+      "value": 90629.11
+    },
+    "joint": {
+      "baseBalance": 1338.53
+    }
+  },
+  "household": {
+    "people": [
+      {
+        "id": "jc",
+        "name": "JC"
+      },
+      {
+        "id": "ch",
+        "name": "CH"
+      },
+      {
+        "id": "leo",
+        "name": "Leo"
+      }
+    ],
+    "currency": "RM",
+    "onboarded": true
+  },
+  "recurring": [
+    {
+      "spaceId": "housing",
+      "label": "House installment",
+      "cat": "installment",
+      "amount": 1493.0
+    },
+    {
+      "spaceId": "housing",
+      "label": "House maintenance",
+      "cat": "maintenance",
+      "amount": 213.2
+    },
+    {
+      "spaceId": "housing",
+      "label": "LG water purifier",
+      "cat": "maintenance",
+      "amount": 50.0
+    },
+    {
+      "spaceId": "housing",
+      "label": "LG air purifier",
+      "cat": "maintenance",
+      "amount": 40.0
+    },
+    {
+      "spaceId": "housing",
+      "label": "Outdoor water filter",
+      "cat": "maintenance",
+      "amount": 69.44
+    },
+    {
+      "spaceId": "housing",
+      "label": "Time Fibre Internet",
+      "cat": "internet",
+      "amount": 104.94
+    },
+    {
+      "spaceId": "housing",
+      "label": "Electric Bill (est.)",
+      "cat": "electric",
+      "amount": 120.0
+    },
+    {
+      "spaceId": "housing",
+      "label": "Water Bill (est.)",
+      "cat": "water",
+      "amount": 15.0
+    },
+    {
+      "spaceId": "joint",
+      "label": "Carry forward from 2025",
+      "cat": "joint",
+      "amount": 1338.53
+    },
+    {
+      "spaceId": "joint",
+      "label": "JC monthly contribution",
+      "cat": "joint",
+      "amount": 2270.0
+    },
+    {
+      "spaceId": "joint",
+      "label": "CH monthly contribution",
+      "cat": "joint",
+      "amount": 2470.0
+    }
+  ],
+  "txs": [
+    {
+      "id": "sheet-car-001",
+      "spaceId": "car",
+      "title": "Myvi loan",
+      "fieldValues": {
+        "vendor": "Myvi loan"
+      },
+      "note": "Loan settlement",
+      "cat": "installment",
+      "amount": 36474.31,
+      "date": "2025-12-31",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-002",
+      "spaceId": "car",
+      "title": "Myvi road tax + insurance",
+      "fieldValues": {
+        "vendor": "Myvi road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1333.15,
+      "date": "2022-12-14",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-003",
+      "spaceId": "car",
+      "title": "Myvi road tax + insurance",
+      "fieldValues": {
+        "vendor": "Myvi road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1307.75,
+      "date": "2024-09-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-004",
+      "spaceId": "car",
+      "title": "Myvi road tax + insurance",
+      "fieldValues": {
+        "vendor": "Myvi road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1207.05,
+      "date": "2025-03-02",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-005",
+      "spaceId": "car",
+      "title": "Myvi service",
+      "fieldValues": {
+        "vendor": "Myvi service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 251.2,
+      "date": "2022-08-26",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-006",
+      "spaceId": "car",
+      "title": "Myvi service",
+      "fieldValues": {
+        "vendor": "Myvi service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 306.85,
+      "date": "2023-01-27",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-007",
+      "spaceId": "car",
+      "title": "Myvi service",
+      "fieldValues": {
+        "vendor": "Myvi service"
+      },
+      "note": "battery",
+      "cat": "maintenance",
+      "amount": 230.0,
+      "date": "2024-04-23",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-008",
+      "spaceId": "car",
+      "title": "Myvi service",
+      "fieldValues": {
+        "vendor": "Myvi service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 330.0,
+      "date": "2025-10-09",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-009",
+      "spaceId": "car",
+      "title": "Alza loan",
+      "fieldValues": {
+        "vendor": "Alza loan"
+      },
+      "note": "Loan settlement",
+      "cat": "installment",
+      "amount": 34520.0,
+      "date": "2025-12-31",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-010",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1346.6,
+      "date": "2019-09-07",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-011",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1206.9,
+      "date": "2020-06-29",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-012",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1008.5,
+      "date": "2021-10-06",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-013",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 861.25,
+      "date": "2022-06-15",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-014",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1952.77,
+      "date": "2023-12-13",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-015",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1372.75,
+      "date": "2024-11-26",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-016",
+      "spaceId": "car",
+      "title": "Alza road tax + insurance",
+      "fieldValues": {
+        "vendor": "Alza road tax + insurance"
+      },
+      "note": "",
+      "cat": "roadtax",
+      "amount": 1257.07,
+      "date": "2025-12-11",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-017",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 556.5,
+      "date": "2021-10-24",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-018",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 439.6,
+      "date": "2022-04-24",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-019",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 921.5,
+      "date": "2022-10-30",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-020",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 365.4,
+      "date": "2023-12-22",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-021",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 190.85,
+      "date": "2024-06-24",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-car-022",
+      "spaceId": "car",
+      "title": "Alza service",
+      "fieldValues": {
+        "vendor": "Alza service"
+      },
+      "note": "",
+      "cat": "maintenance",
+      "amount": 382.6,
+      "date": "2024-11-28",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-ch-001",
+      "spaceId": "ch",
+      "title": "Nett Salary",
+      "fieldValues": {
+        "vendor": "Nett Salary"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 5339.15,
+      "date": "2026-01-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-002",
+      "spaceId": "ch",
+      "title": "Youtube Premium",
+      "fieldValues": {
+        "vendor": "Youtube Premium"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 21.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-003",
+      "spaceId": "ch",
+      "title": "Sinaran Rental",
+      "fieldValues": {
+        "vendor": "Sinaran Rental"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 1760.0,
+      "date": "2026-01-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-004",
+      "spaceId": "ch",
+      "title": "Apple One",
+      "fieldValues": {
+        "vendor": "Apple One"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 22.5,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-005",
+      "spaceId": "ch",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-006",
+      "spaceId": "ch",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-007",
+      "spaceId": "ch",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-008",
+      "spaceId": "ch",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-009",
+      "spaceId": "ch",
+      "title": "Sinaran",
+      "fieldValues": {
+        "vendor": "Sinaran"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 2350.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-010",
+      "spaceId": "ch",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-011",
+      "spaceId": "ch",
+      "title": "Petrol",
+      "fieldValues": {
+        "vendor": "Petrol"
+      },
+      "note": "",
+      "cat": "petrol",
+      "amount": 150.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-012",
+      "spaceId": "ch",
+      "title": "AIA",
+      "fieldValues": {
+        "vendor": "AIA"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 10.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-013",
+      "spaceId": "ch",
+      "title": "Nett Salary",
+      "fieldValues": {
+        "vendor": "Nett Salary"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 5717.06,
+      "date": "2026-02-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-014",
+      "spaceId": "ch",
+      "title": "Youtube Premium",
+      "fieldValues": {
+        "vendor": "Youtube Premium"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 21.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-015",
+      "spaceId": "ch",
+      "title": "Sinaran Rental",
+      "fieldValues": {
+        "vendor": "Sinaran Rental"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 1760.0,
+      "date": "2026-02-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-016",
+      "spaceId": "ch",
+      "title": "Apple One",
+      "fieldValues": {
+        "vendor": "Apple One"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 22.5,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-017",
+      "spaceId": "ch",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-018",
+      "spaceId": "ch",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-019",
+      "spaceId": "ch",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-020",
+      "spaceId": "ch",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-021",
+      "spaceId": "ch",
+      "title": "Sinaran",
+      "fieldValues": {
+        "vendor": "Sinaran"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 2350.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-022",
+      "spaceId": "ch",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-023",
+      "spaceId": "ch",
+      "title": "Petrol",
+      "fieldValues": {
+        "vendor": "Petrol"
+      },
+      "note": "",
+      "cat": "petrol",
+      "amount": 150.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-024",
+      "spaceId": "ch",
+      "title": "AIA",
+      "fieldValues": {
+        "vendor": "AIA"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 10.0,
+      "date": "2026-02-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-025",
+      "spaceId": "ch",
+      "title": "Nett Salary",
+      "fieldValues": {
+        "vendor": "Nett Salary"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 5725.0,
+      "date": "2026-03-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-026",
+      "spaceId": "ch",
+      "title": "Youtube Premium",
+      "fieldValues": {
+        "vendor": "Youtube Premium"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 21.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-027",
+      "spaceId": "ch",
+      "title": "Sinaran Rental",
+      "fieldValues": {
+        "vendor": "Sinaran Rental"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 1760.0,
+      "date": "2026-03-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-028",
+      "spaceId": "ch",
+      "title": "Apple One",
+      "fieldValues": {
+        "vendor": "Apple One"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 22.5,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-029",
+      "spaceId": "ch",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-030",
+      "spaceId": "ch",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-031",
+      "spaceId": "ch",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-032",
+      "spaceId": "ch",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-033",
+      "spaceId": "ch",
+      "title": "Sinaran",
+      "fieldValues": {
+        "vendor": "Sinaran"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 2350.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-034",
+      "spaceId": "ch",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-035",
+      "spaceId": "ch",
+      "title": "Petrol",
+      "fieldValues": {
+        "vendor": "Petrol"
+      },
+      "note": "",
+      "cat": "petrol",
+      "amount": 150.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-036",
+      "spaceId": "ch",
+      "title": "AIA",
+      "fieldValues": {
+        "vendor": "AIA"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 10.0,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-037",
+      "spaceId": "ch",
+      "title": "Sinaran maintenance",
+      "fieldValues": {
+        "vendor": "Sinaran maintenance"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 259.72,
+      "date": "2026-03-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-038",
+      "spaceId": "ch",
+      "title": "Nett Salary",
+      "fieldValues": {
+        "vendor": "Nett Salary"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 5856.55,
+      "date": "2026-04-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-039",
+      "spaceId": "ch",
+      "title": "Youtube Premium",
+      "fieldValues": {
+        "vendor": "Youtube Premium"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 21.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-040",
+      "spaceId": "ch",
+      "title": "Sinaran Rental",
+      "fieldValues": {
+        "vendor": "Sinaran Rental"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 1760.0,
+      "date": "2026-04-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-041",
+      "spaceId": "ch",
+      "title": "Apple One",
+      "fieldValues": {
+        "vendor": "Apple One"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 22.5,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-042",
+      "spaceId": "ch",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-043",
+      "spaceId": "ch",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-044",
+      "spaceId": "ch",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-045",
+      "spaceId": "ch",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-046",
+      "spaceId": "ch",
+      "title": "Sinaran",
+      "fieldValues": {
+        "vendor": "Sinaran"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 2350.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-047",
+      "spaceId": "ch",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-048",
+      "spaceId": "ch",
+      "title": "Petrol",
+      "fieldValues": {
+        "vendor": "Petrol"
+      },
+      "note": "",
+      "cat": "petrol",
+      "amount": 150.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-049",
+      "spaceId": "ch",
+      "title": "AIA",
+      "fieldValues": {
+        "vendor": "AIA"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 10.0,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-050",
+      "spaceId": "ch",
+      "title": "Sinaran maintenance",
+      "fieldValues": {
+        "vendor": "Sinaran maintenance"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 259.72,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-051",
+      "spaceId": "ch",
+      "title": "Google AI Pro",
+      "fieldValues": {
+        "vendor": "Google AI Pro"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 97.99,
+      "date": "2026-04-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-052",
+      "spaceId": "ch",
+      "title": "Nett Salary",
+      "fieldValues": {
+        "vendor": "Nett Salary"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 5856.55,
+      "date": "2026-05-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-053",
+      "spaceId": "ch",
+      "title": "Youtube Premium",
+      "fieldValues": {
+        "vendor": "Youtube Premium"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 21.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-054",
+      "spaceId": "ch",
+      "title": "Sinaran Rental",
+      "fieldValues": {
+        "vendor": "Sinaran Rental"
+      },
+      "note": "",
+      "cat": "income",
+      "amount": 1760.0,
+      "date": "2026-05-01",
+      "dir": "in"
+    },
+    {
+      "id": "sheet-ch-055",
+      "spaceId": "ch",
+      "title": "Apple One",
+      "fieldValues": {
+        "vendor": "Apple One"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 22.5,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-056",
+      "spaceId": "ch",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-057",
+      "spaceId": "ch",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-058",
+      "spaceId": "ch",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-059",
+      "spaceId": "ch",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-060",
+      "spaceId": "ch",
+      "title": "Sinaran",
+      "fieldValues": {
+        "vendor": "Sinaran"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 2350.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-061",
+      "spaceId": "ch",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-062",
+      "spaceId": "ch",
+      "title": "Petrol",
+      "fieldValues": {
+        "vendor": "Petrol"
+      },
+      "note": "",
+      "cat": "petrol",
+      "amount": 150.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-063",
+      "spaceId": "ch",
+      "title": "AIA",
+      "fieldValues": {
+        "vendor": "AIA"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 10.0,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-064",
+      "spaceId": "ch",
+      "title": "Sinaran maintenance",
+      "fieldValues": {
+        "vendor": "Sinaran maintenance"
+      },
+      "note": "",
+      "cat": "house",
+      "amount": 259.72,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-ch-065",
+      "spaceId": "ch",
+      "title": "Google AI Pro",
+      "fieldValues": {
+        "vendor": "Google AI Pro"
+      },
+      "note": "",
+      "cat": "subscriptions",
+      "amount": 97.99,
+      "date": "2026-05-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-expenses-001",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Milk powder",
+      "cat": "baby",
+      "amount": 168.57,
+      "date": "2023-07-06",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-002",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "New year clothes",
+      "cat": "shopping",
+      "amount": 189.0,
+      "date": "2026-01-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-003",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meal",
+      "cat": "grocery",
+      "amount": 130.15,
+      "date": "2026-01-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-004",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo shampoo and sauce for Salmon",
+      "cat": "baby",
+      "amount": 50.73,
+      "date": "2026-01-08",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-005",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "diaper, milk, candy",
+      "cat": "baby",
+      "amount": 42.0,
+      "date": "2026-01-08",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-006",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Huggies",
+      "cat": "baby",
+      "amount": 54.0,
+      "date": "2026-01-14",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-007",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meals",
+      "cat": "grocery",
+      "amount": 74.0,
+      "date": "2026-01-21",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-008",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meals",
+      "cat": "grocery",
+      "amount": 229.0,
+      "date": "2026-01-30",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-009",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Laksa",
+      "cat": "meals",
+      "amount": 24.0,
+      "date": "2026-02-01",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-010",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meals",
+      "cat": "grocery",
+      "amount": 153.3,
+      "date": "2026-02-07",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-011",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo shirt",
+      "cat": "baby",
+      "amount": 30.0,
+      "date": "2026-02-07",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-012",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Fruit & vege",
+      "cat": "grocery",
+      "amount": 7.0,
+      "date": "2026-02-07",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-013",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meals",
+      "cat": "meals",
+      "amount": 17.5,
+      "date": "2026-02-12",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-014",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 343.95,
+      "date": "2026-02-19",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-015",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 353.62,
+      "date": "2026-02-19",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-016",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meals",
+      "cat": "grocery",
+      "amount": 242.95,
+      "date": "2026-02-20",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-017",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 200.47,
+      "date": "2026-02-22",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-018",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meals",
+      "cat": "meals",
+      "amount": 24.0,
+      "date": "2026-02-28",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-019",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 72.0,
+      "date": "2026-03-01",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-020",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo shirt, snack, bottle",
+      "cat": "baby",
+      "amount": 160.0,
+      "date": "2026-03-01",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-021",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 159.8,
+      "date": "2026-03-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-022",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "smart plug socket, Toys",
+      "cat": "other",
+      "amount": 70.0,
+      "date": "2026-03-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-023",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meals, pacifier",
+      "cat": "baby",
+      "amount": 232.62,
+      "date": "2026-03-06",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-024",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 144.66,
+      "date": "2026-03-08",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-025",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Diapers, biscuits",
+      "cat": "baby",
+      "amount": 55.0,
+      "date": "2026-03-08",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-026",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 164.75,
+      "date": "2026-03-11",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-027",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Fruit, Milk Powder, snack, timer, milk bottle",
+      "cat": "baby",
+      "amount": 411.0,
+      "date": "2026-03-14",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-028",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meals, Mr diy socket",
+      "cat": "meals",
+      "amount": 76.8,
+      "date": "2026-03-15",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-029",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meals",
+      "cat": "meals",
+      "amount": 24.0,
+      "date": "2026-03-20",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-030",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meals",
+      "cat": "meals",
+      "amount": 14.0,
+      "date": "2026-03-23",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-031",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo shirt (not yet receive)",
+      "cat": "baby",
+      "amount": 163.0,
+      "date": "2026-03-27",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-032",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo book",
+      "cat": "baby",
+      "amount": 48.2,
+      "date": "2026-03-29",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-033",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 145.35,
+      "date": "2026-03-29",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-034",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meal",
+      "cat": "meals",
+      "amount": 125.1,
+      "date": "2026-03-29",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-035",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo shirt and snack",
+      "cat": "baby",
+      "amount": 54.24,
+      "date": "2026-04-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-036",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo cake flour",
+      "cat": "baby",
+      "amount": 15.9,
+      "date": "2026-04-04",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-037",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Tapo Vacuum Robot",
+      "cat": "other",
+      "amount": 1626.04,
+      "date": "2026-04-04",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-038",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Leo shower stand + rice puff",
+      "cat": "baby",
+      "amount": 79.75,
+      "date": "2026-04-06",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-039",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Leo head protection hat",
+      "cat": "baby",
+      "amount": 33.17,
+      "date": "2026-04-09",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-040",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Pasar grocery",
+      "cat": "grocery",
+      "amount": 25.0,
+      "date": "2026-04-11",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-041",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Kitchen Fan",
+      "cat": "other",
+      "amount": 118.0,
+      "date": "2026-04-11",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-042",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meal",
+      "cat": "meals",
+      "amount": 41.0,
+      "date": "2026-04-12",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-043",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Bye Bye Blackhead cleanser + toilet brush + garbage bag",
+      "cat": "other",
+      "amount": 40.44,
+      "date": "2026-04-24",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-044",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Biscuits and Leo snack",
+      "cat": "baby",
+      "amount": 62.0,
+      "date": "2026-04-25",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-045",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Bread and meal",
+      "cat": "meals",
+      "amount": 22.0,
+      "date": "2026-04-25",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-046",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "2 week meal",
+      "cat": "meals",
+      "amount": 138.4,
+      "date": "2026-04-30",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-047",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer"
+      },
+      "note": "2 weeks grocery and Leo birthday presents for kids",
+      "cat": "baby",
+      "amount": 416.8,
+      "date": "2026-04-30",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-048",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Lunch",
+      "cat": "meals",
+      "amount": 33.5,
+      "date": "2026-05-02",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-049",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 95.4,
+      "date": "2026-05-02",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-050",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Leo shirt",
+      "cat": "baby",
+      "amount": 115.0,
+      "date": "2026-05-02",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-051",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail",
+        "location": "Billion"
+      },
+      "note": "grocery",
+      "cat": "grocery",
+      "amount": 94.75,
+      "date": "2026-05-09",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-052",
+      "spaceId": "expenses",
+      "title": "Taobao",
+      "fieldValues": {
+        "vendor": "Taobao"
+      },
+      "note": "Taobao",
+      "cat": "other",
+      "amount": 148.01,
+      "date": "2026-05-12",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-053",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 16.2,
+      "date": "2026-05-15",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-054",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Diapers",
+      "cat": "baby",
+      "amount": 49.99,
+      "date": "2026-05-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-055",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer",
+        "location": "Sunway Carnival"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 58.2,
+      "date": "2026-05-18",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-056",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "toys",
+      "cat": "other",
+      "amount": 11.03,
+      "date": "2026-05-22",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-057",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 31.9,
+      "date": "2026-05-22",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-058",
+      "spaceId": "expenses",
+      "title": "Eco",
+      "fieldValues": {
+        "vendor": "Eco"
+      },
+      "note": "Leo birthday decoration",
+      "cat": "baby",
+      "amount": 39.0,
+      "date": "2026-05-23",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-059",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Ribena, diapers, similac",
+      "cat": "baby",
+      "amount": 307.14,
+      "date": "2026-05-24",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-060",
+      "spaceId": "expenses",
+      "title": "Sunshine",
+      "fieldValues": {
+        "vendor": "Sunshine"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 52.05,
+      "date": "2026-05-24",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-061",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 43.5,
+      "date": "2026-05-25",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-062",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer",
+        "location": "Ipoh Parade"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 29.7,
+      "date": "2026-05-26",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-063",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Georgetown Pharmacy - Lip balm for Leo",
+      "cat": "baby",
+      "amount": 35.1,
+      "date": "2026-05-28",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-064",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon",
+        "location": "Queensbay"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 39.75,
+      "date": "2026-05-30",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-065",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 117.5,
+      "date": "2026-05-31",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-066",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meal (total)",
+      "cat": "meals",
+      "amount": 267.4,
+      "date": "2026-05-31",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-067",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery (total:ikea recharg battery,)",
+      "cat": "grocery",
+      "amount": 405.65,
+      "date": "2026-05-31",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-068",
+      "spaceId": "expenses",
+      "title": "Jaya Grocer",
+      "fieldValues": {
+        "vendor": "Jaya Grocer",
+        "location": "Bayana"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 117.5,
+      "date": "2026-05-31",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-069",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon",
+        "location": "Queensbay"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 29.5,
+      "date": "2026-06-03",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-070",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail",
+        "location": "Gurney Plaza"
+      },
+      "note": "Switch 99 x 3",
+      "cat": "other",
+      "amount": 297.0,
+      "date": "2026-06-04",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-071",
+      "spaceId": "expenses",
+      "title": "Sunshine",
+      "fieldValues": {
+        "vendor": "Sunshine",
+        "location": "Sunshine Square"
+      },
+      "note": "",
+      "cat": "other",
+      "amount": 112.3,
+      "date": "2026-06-05",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-072",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon",
+        "location": "Queensbay"
+      },
+      "note": "",
+      "cat": "other",
+      "amount": 33.8,
+      "date": "2026-06-09",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-073",
+      "spaceId": "expenses",
+      "title": "Shopee",
+      "fieldValues": {
+        "vendor": "Shopee"
+      },
+      "note": "Milk Powder + Leo snacks",
+      "cat": "baby",
+      "amount": 71.33,
+      "date": "2026-06-10",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-074",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "meat",
+      "cat": "grocery",
+      "amount": 41.5,
+      "date": "2026-06-16",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-075",
+      "spaceId": "expenses",
+      "title": "Aeon",
+      "fieldValues": {
+        "vendor": "Aeon",
+        "location": "Queensbay"
+      },
+      "note": "",
+      "cat": "other",
+      "amount": 45.1,
+      "date": "2026-06-16",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-076",
+      "spaceId": "expenses",
+      "title": "Lotus",
+      "fieldValues": {
+        "vendor": "Lotus",
+        "location": "Seberang Jaya"
+      },
+      "note": "Jalan Jalan Japan Leo toys",
+      "cat": "baby",
+      "amount": 46.0,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-077",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery",
+      "cat": "grocery",
+      "amount": 155.0,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-078",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Leo Shirt, toys",
+      "cat": "baby",
+      "amount": 240.0,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-079",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Grocery, meal",
+      "cat": "grocery",
+      "amount": 193.95,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-080",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Taobao, milk powder, Leo辅食",
+      "cat": "baby",
+      "amount": 1252.65,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-expenses-081",
+      "spaceId": "expenses",
+      "title": "Retail",
+      "fieldValues": {
+        "vendor": "Retail"
+      },
+      "note": "Meat",
+      "cat": "grocery",
+      "amount": 52.0,
+      "date": "2026-06-17",
+      "dir": "out",
+      "payer": "Joint"
+    },
+    {
+      "id": "sheet-housing-001",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-01-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-002",
+      "spaceId": "housing",
+      "title": "Electric Bill (Jan 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (Jan 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 70.55,
+      "date": "2026-01-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-003",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-02-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-004",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-03-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-005",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-04-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-006",
+      "spaceId": "housing",
+      "title": "Electric Bill (Feb 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (Feb 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 73.3,
+      "date": "2026-02-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-007",
+      "spaceId": "housing",
+      "title": "Electric Bill (Mar 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (Mar 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 68.4,
+      "date": "2026-03-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-008",
+      "spaceId": "housing",
+      "title": "Water Bill (Jan, Feb 2026)",
+      "fieldValues": {
+        "vendor": "Water Bill (Jan, Feb 2026)",
+        "provider": "PBAPP"
+      },
+      "note": "",
+      "cat": "water",
+      "amount": 13.64,
+      "date": "2026-02-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-009",
+      "spaceId": "housing",
+      "title": "Electric Bill (Apr 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (Apr 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 67.75,
+      "date": "2026-04-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-010",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-05-02",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-011",
+      "spaceId": "housing",
+      "title": "Water Bill (Mar, Apr 2026)",
+      "fieldValues": {
+        "vendor": "Water Bill (Mar, Apr 2026)",
+        "provider": "PBAPP"
+      },
+      "note": "",
+      "cat": "water",
+      "amount": 12.4,
+      "date": "2026-04-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-012",
+      "spaceId": "housing",
+      "title": "MOT payment",
+      "fieldValues": {
+        "vendor": "MOT payment"
+      },
+      "note": "Paid by JC",
+      "cat": "other",
+      "amount": 3000.0,
+      "date": "2026-05-12",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-013",
+      "spaceId": "housing",
+      "title": "Electric Bill (May 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (May 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 98.65,
+      "date": "2026-05-10",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-014",
+      "spaceId": "housing",
+      "title": "Monthly Commitment",
+      "fieldValues": {
+        "vendor": "Monthly Commitment",
+        "provider": "Maybank"
+      },
+      "note": "",
+      "cat": "installment",
+      "amount": 1970.58,
+      "date": "2026-06-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-housing-015",
+      "spaceId": "housing",
+      "title": "Electric Bill (Jun 2026)",
+      "fieldValues": {
+        "vendor": "Electric Bill (Jun 2026)",
+        "provider": "TNB"
+      },
+      "note": "",
+      "cat": "electric",
+      "amount": 77.55,
+      "date": "2026-06-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-housing-016",
+      "spaceId": "housing",
+      "title": "Water Bill (May, Jun 2026)",
+      "fieldValues": {
+        "vendor": "Water Bill (May, Jun 2026)",
+        "provider": "PBAPP"
+      },
+      "note": "",
+      "cat": "water",
+      "amount": 13.02,
+      "date": "2026-06-01",
+      "dir": "out",
+      "payer": "Joint",
+      "status": "due"
+    },
+    {
+      "id": "sheet-investment-001",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 10436.58,
+      "date": "2019-08-06",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-002",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 10436.58,
+      "date": "2020-09-16",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-003",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4883.46,
+      "date": "2021-09-17",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-004",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4883.46,
+      "date": "2022-09-21",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-005",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4883.46,
+      "date": "2023-08-09",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-006",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4883.46,
+      "date": "2024-08-04",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-007",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4883.46,
+      "date": "2025-08-05",
+      "dir": "out",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-008",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 10448.01,
+      "date": "2019-08-06",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-009",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 10448.01,
+      "date": "2020-09-16",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-010",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4888.81,
+      "date": "2021-09-17",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-011",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4888.81,
+      "date": "2022-08-08",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-012",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4888.1,
+      "date": "2023-08-09",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-013",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4888.1,
+      "date": "2024-08-02",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-investment-014",
+      "spaceId": "investment",
+      "title": "AIA contribution",
+      "fieldValues": {
+        "vendor": "AIA contribution",
+        "platform": "AIA"
+      },
+      "note": "",
+      "cat": "investment",
+      "amount": 4888.81,
+      "date": "2025-08-02",
+      "dir": "out",
+      "payer": "CH",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-jc-001",
+      "spaceId": "jc",
+      "title": "car insurance",
+      "fieldValues": {
+        "vendor": "car insurance"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 1217.28,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-jc-002",
+      "spaceId": "jc",
+      "title": "PTPTN",
+      "fieldValues": {
+        "vendor": "PTPTN"
+      },
+      "note": "",
+      "cat": "ptptn",
+      "amount": 200.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-jc-003",
+      "spaceId": "jc",
+      "title": "Insurance (Allianz)",
+      "fieldValues": {
+        "vendor": "Insurance (Allianz)"
+      },
+      "note": "",
+      "cat": "insurance",
+      "amount": 270.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-jc-004",
+      "spaceId": "jc",
+      "title": "Hotlink",
+      "fieldValues": {
+        "vendor": "Hotlink"
+      },
+      "note": "",
+      "cat": "mobile",
+      "amount": 45.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-jc-005",
+      "spaceId": "jc",
+      "title": "Parent",
+      "fieldValues": {
+        "vendor": "Parent"
+      },
+      "note": "",
+      "cat": "parent",
+      "amount": 600.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-jc-006",
+      "spaceId": "jc",
+      "title": "Joint Fund",
+      "fieldValues": {
+        "vendor": "Joint Fund"
+      },
+      "note": "",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-01-01",
+      "dir": "out"
+    },
+    {
+      "id": "sheet-joint-001",
+      "spaceId": "joint",
+      "title": "JC contribution",
+      "fieldValues": {
+        "vendor": "JC contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-01-01",
+      "dir": "in",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-joint-002",
+      "spaceId": "joint",
+      "title": "JC contribution",
+      "fieldValues": {
+        "vendor": "JC contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-02-01",
+      "dir": "in",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-joint-003",
+      "spaceId": "joint",
+      "title": "JC contribution",
+      "fieldValues": {
+        "vendor": "JC contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-03-01",
+      "dir": "in",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-joint-004",
+      "spaceId": "joint",
+      "title": "JC contribution",
+      "fieldValues": {
+        "vendor": "JC contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-04-01",
+      "dir": "in",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-joint-005",
+      "spaceId": "joint",
+      "title": "JC contribution",
+      "fieldValues": {
+        "vendor": "JC contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2270.0,
+      "date": "2026-05-01",
+      "dir": "in",
+      "payer": "JC",
+      "status": "paid"
+    },
+    {
+      "id": "sheet-joint-006",
+      "spaceId": "joint",
+      "title": "CH contribution",
+      "fieldValues": {
+        "vendor": "CH contribution"
+      },
+      "note": "Monthly top-up",
+      "cat": "joint",
+      "amount": 2470.0,
+      "date": "2026-01-01",
+      "dir": "in",
+      "payer": "CH",
+      "status": "paid"
+    }
+  ]
+}
