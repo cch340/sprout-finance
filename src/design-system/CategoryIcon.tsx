@@ -26,8 +26,10 @@ const CATEGORIES: Record<string, CatDef> = {
   maintenance: { emoji: '🔧', ...NEUTRAL },
   furniture: { emoji: '🛋️', bg: 'var(--cat-shopping-bg)' },
   appliance: { emoji: '🔌', bg: 'var(--cat-car-bg)' },
-  // Car
+  // Car (categories are vehicles; roadtax kept for the type field / legacy data)
   car: { emoji: '🚗', bg: 'var(--cat-car-bg)' },
+  myvi: { emoji: '🚗', bg: 'var(--cat-car-bg)' },
+  alza: { emoji: '🚙', bg: 'var(--cat-car-bg)' },
   roadtax: { emoji: '🛡️', bg: 'var(--cat-car-bg)' },
   petrol: { emoji: '⛽', bg: 'var(--cat-car-bg)' },
   // Investment

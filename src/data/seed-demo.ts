@@ -25,9 +25,12 @@ const CATS: Record<string, Category[]> = {
     { key: 'maintenance', label: 'Maintenance' }, { key: 'furniture', label: 'Furniture' },
     { key: 'appliance', label: 'Appliance' }, { key: 'other', label: 'Other' },
   ],
+  // Cars are the categories — one Car space, one category per vehicle. The
+  // expense type (installment / road tax / maintenance) lives in the `type`
+  // field below so spend rolls up per car.
   car: [
-    { key: 'installment', label: 'Installment' }, { key: 'roadtax', label: 'Road tax + Insurance' },
-    { key: 'maintenance', label: 'Maintenance' },
+    { key: 'myvi', label: 'Myvi', emoji: '🚗' },
+    { key: 'alza', label: 'Alza', emoji: '🚙' },
   ],
   investment: [{ key: 'investment', label: 'Investment' }],
   personal: [
@@ -49,6 +52,7 @@ const FIELDS: Record<string, FieldDef[]> = {
   ],
   car: [
     { key: 'vendor', label: 'Item', type: 'text', primary: true, placeholder: 'Service' },
+    { key: 'type', label: 'Type', type: 'select', options: ['Installment', 'Road tax + Insurance', 'Maintenance'] },
     { key: 'workshop', label: 'Workshop / Station', type: 'select', options: ['Petronas', 'Shell', 'Perodua SC', 'Toyota SC'] },
   ],
   investment: [
@@ -121,8 +125,8 @@ const RECURRING_SRC: Array<Omit<RecurringItem, 'id'>> = [
   { spaceId: 'housing', label: 'Electric (avg)', cat: 'electric', amount: 180 },
   { spaceId: 'housing', label: 'Water (avg)', cat: 'water', amount: 60 },
   { spaceId: 'housing', label: 'Internet · Time Fibre', cat: 'internet', amount: 159 },
-  { spaceId: 'car', label: 'Myvi installment', cat: 'installment', amount: 545 },
-  { spaceId: 'car', label: 'Road tax + insurance (monthly)', cat: 'roadtax', amount: 120 },
+  { spaceId: 'car', label: 'Myvi installment', cat: 'myvi', amount: 545 },
+  { spaceId: 'car', label: 'Myvi road tax + insurance (monthly)', cat: 'myvi', amount: 120 },
   { spaceId: 'investment', label: 'AIA monthly contribution', cat: 'investment', amount: 300 },
   { spaceId: 'joint', label: 'Carry forward from 2025', cat: 'joint', amount: 2100 },
   { spaceId: 'joint', label: 'JC monthly contribution', cat: 'joint', amount: 1500 },
@@ -150,9 +154,9 @@ const CURRENT_TX: SrcTx[] = [
   { spaceId: 'housing', day: 30, vendor: 'Water Bill · May–Jun', note: '', cat: 'water', amount: 62.4, payer: 'Joint', status: 'due', fields: { provider: 'PBAPP' } },
   { spaceId: 'housing', day: 5, vendor: 'Internet', note: '500 Mbps', cat: 'internet', amount: 159, payer: 'CH', status: 'paid', fields: { provider: 'Time Fibre' } },
   { spaceId: 'housing', day: 6, vendor: 'Air Purifier filter', note: 'Replacement', cat: 'appliance', amount: 120, payer: 'Joint', status: 'paid', fields: { provider: 'LG' } },
-  // Car
-  { spaceId: 'car', day: 10, vendor: 'Myvi loan · PQC 9059', note: 'Monthly installment', cat: 'installment', amount: 545, payer: 'JC', status: 'paid', fields: { workshop: 'Maybank' } },
-  { spaceId: 'car', day: 18, vendor: 'Alza service', note: 'Maintenance', cat: 'maintenance', amount: 235, payer: 'JC', status: 'paid', fields: { workshop: 'Perodua SC' } },
+  // Car — categorised by vehicle (Myvi / Alza); expense type is a field.
+  { spaceId: 'car', day: 10, vendor: 'Loan · PQC 9059', note: 'Monthly installment', cat: 'myvi', amount: 545, payer: 'JC', status: 'paid', fields: { type: 'Installment', workshop: 'Maybank' } },
+  { spaceId: 'car', day: 18, vendor: 'Service', note: 'Maintenance', cat: 'alza', amount: 235, payer: 'JC', status: 'paid', fields: { type: 'Maintenance', workshop: 'Perodua SC' } },
   // Investment
   { spaceId: 'investment', day: 15, vendor: 'AIA contribution', note: 'Monthly', cat: 'investment', amount: 300, payer: 'Joint', status: 'paid', fields: { platform: 'AIA' } },
   // Joint Fund
@@ -186,7 +190,7 @@ const HISTORY_TOTALS = [4310, 3980, 4620, 4180, 4980];
 const SPLIT: Array<{ spaceId: string; cat: string; ratio: number }> = [
   { spaceId: 'expenses', cat: 'grocery', ratio: 951.3 / 3708.7 },
   { spaceId: 'housing', cat: 'installment', ratio: 1977.4 / 3708.7 },
-  { spaceId: 'car', cat: 'installment', ratio: 780 / 3708.7 },
+  { spaceId: 'car', cat: 'myvi', ratio: 780 / 3708.7 },
 ];
 
 function daysInMonth(year: number, month0: number): number {

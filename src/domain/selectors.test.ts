@@ -48,8 +48,8 @@ describe('roll-ups', () => {
   it('topCategories ranks the biggest spend categories', () => {
     const top = topCategories(snap.spaces, snap.txs, MONTH);
     expect(top.length).toBeLessThanOrEqual(5);
-    expect(top[0].cat).toBe('installment'); // 1450 + 545 = 1995
-    expect(top[0].value).toBeCloseTo(1995, 2);
+    expect(top[0].cat).toBe('installment'); // housing installment (car now rolls up per vehicle)
+    expect(top[0].value).toBeCloseTo(1450, 2);
     // sorted descending
     for (let i = 1; i < top.length; i++) {
       expect(top[i - 1].value).toBeGreaterThanOrEqual(top[i].value);

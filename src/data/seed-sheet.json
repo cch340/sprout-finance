@@ -101,12 +101,13 @@
     {
       "id": "sheet-car-001",
       "spaceId": "car",
-      "title": "Myvi loan",
+      "title": "Loan",
       "fieldValues": {
-        "vendor": "Myvi loan"
+        "vendor": "Loan",
+        "type": "Installment"
       },
       "note": "Loan settlement",
-      "cat": "installment",
+      "cat": "myvi",
       "amount": 36474.31,
       "date": "2025-12-31",
       "dir": "out",
@@ -116,12 +117,13 @@
     {
       "id": "sheet-car-002",
       "spaceId": "car",
-      "title": "Myvi road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Myvi road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "myvi",
       "amount": 1333.15,
       "date": "2022-12-14",
       "dir": "out",
@@ -131,12 +133,13 @@
     {
       "id": "sheet-car-003",
       "spaceId": "car",
-      "title": "Myvi road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Myvi road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "myvi",
       "amount": 1307.75,
       "date": "2024-09-01",
       "dir": "out",
@@ -146,12 +149,13 @@
     {
       "id": "sheet-car-004",
       "spaceId": "car",
-      "title": "Myvi road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Myvi road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "myvi",
       "amount": 1207.05,
       "date": "2025-03-02",
       "dir": "out",
@@ -161,12 +165,13 @@
     {
       "id": "sheet-car-005",
       "spaceId": "car",
-      "title": "Myvi service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Myvi service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "myvi",
       "amount": 251.2,
       "date": "2022-08-26",
       "dir": "out",
@@ -176,12 +181,13 @@
     {
       "id": "sheet-car-006",
       "spaceId": "car",
-      "title": "Myvi service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Myvi service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "myvi",
       "amount": 306.85,
       "date": "2023-01-27",
       "dir": "out",
@@ -191,12 +197,13 @@
     {
       "id": "sheet-car-007",
       "spaceId": "car",
-      "title": "Myvi service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Myvi service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "battery",
-      "cat": "maintenance",
+      "cat": "myvi",
       "amount": 230.0,
       "date": "2024-04-23",
       "dir": "out",
@@ -206,12 +213,13 @@
     {
       "id": "sheet-car-008",
       "spaceId": "car",
-      "title": "Myvi service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Myvi service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "myvi",
       "amount": 330.0,
       "date": "2025-10-09",
       "dir": "out",
@@ -221,12 +229,13 @@
     {
       "id": "sheet-car-009",
       "spaceId": "car",
-      "title": "Alza loan",
+      "title": "Loan",
       "fieldValues": {
-        "vendor": "Alza loan"
+        "vendor": "Loan",
+        "type": "Installment"
       },
       "note": "Loan settlement",
-      "cat": "installment",
+      "cat": "alza",
       "amount": 34520.0,
       "date": "2025-12-31",
       "dir": "out",
@@ -236,12 +245,13 @@
     {
       "id": "sheet-car-010",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1346.6,
       "date": "2019-09-07",
       "dir": "out",
@@ -251,12 +261,13 @@
     {
       "id": "sheet-car-011",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1206.9,
       "date": "2020-06-29",
       "dir": "out",
@@ -266,12 +277,13 @@
     {
       "id": "sheet-car-012",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1008.5,
       "date": "2021-10-06",
       "dir": "out",
@@ -281,12 +293,13 @@
     {
       "id": "sheet-car-013",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 861.25,
       "date": "2022-06-15",
       "dir": "out",
@@ -296,12 +309,13 @@
     {
       "id": "sheet-car-014",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1952.77,
       "date": "2023-12-13",
       "dir": "out",
@@ -311,12 +325,13 @@
     {
       "id": "sheet-car-015",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1372.75,
       "date": "2024-11-26",
       "dir": "out",
@@ -326,12 +341,13 @@
     {
       "id": "sheet-car-016",
       "spaceId": "car",
-      "title": "Alza road tax + insurance",
+      "title": "Road tax + insurance",
       "fieldValues": {
-        "vendor": "Alza road tax + insurance"
+        "vendor": "Road tax + insurance",
+        "type": "Road tax + Insurance"
       },
       "note": "",
-      "cat": "roadtax",
+      "cat": "alza",
       "amount": 1257.07,
       "date": "2025-12-11",
       "dir": "out",
@@ -341,12 +357,13 @@
     {
       "id": "sheet-car-017",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 556.5,
       "date": "2021-10-24",
       "dir": "out",
@@ -356,12 +373,13 @@
     {
       "id": "sheet-car-018",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 439.6,
       "date": "2022-04-24",
       "dir": "out",
@@ -371,12 +389,13 @@
     {
       "id": "sheet-car-019",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 921.5,
       "date": "2022-10-30",
       "dir": "out",
@@ -386,12 +405,13 @@
     {
       "id": "sheet-car-020",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 365.4,
       "date": "2023-12-22",
       "dir": "out",
@@ -401,12 +421,13 @@
     {
       "id": "sheet-car-021",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 190.85,
       "date": "2024-06-24",
       "dir": "out",
@@ -416,12 +437,13 @@
     {
       "id": "sheet-car-022",
       "spaceId": "car",
-      "title": "Alza service",
+      "title": "Service",
       "fieldValues": {
-        "vendor": "Alza service"
+        "vendor": "Service",
+        "type": "Maintenance"
       },
       "note": "",
-      "cat": "maintenance",
+      "cat": "alza",
       "amount": 382.6,
       "date": "2024-11-28",
       "dir": "out",

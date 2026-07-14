@@ -55,6 +55,9 @@ Mapping judgment calls:
   - Everyday budget kept at 1500 (Money breakdown Food=600 too narrow; Everyday
     also covers baby/shopping). Housing budget = 2090 (Money breakdown House total).
   - Car budget kept at 800 (no monthly figure in sheet).
+  - Car: one Car space, cars as categories (cat = myvi/alza). The expense kind
+    (Installment / Road tax + Insurance / Maintenance) is stored in the `type`
+    field, and item titles drop the vehicle prefix ('Myvi service' -> 'Service').
   - Expenses category order: baby > grocery > meals > shopping > other, so
     'Leo shirt' -> baby (child spend), 'New year clothes' -> shopping.
   - Expenses trailing rows without a date inherit the last seen date (2026-06-17).

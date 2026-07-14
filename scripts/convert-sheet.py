@@ -187,19 +187,21 @@ def convert_housing():
 
 # ==== Car -> 'car' =======================================================
 def convert_car():
-    # (date_col, pay_col, title, cat, note)
+    # One Car space, cars as categories: `cat` is the vehicle (myvi/alza) and
+    # the expense kind lives in the `type` field so spend rolls up per car.
+    # (date_col, pay_col, item, vehicle_cat, type, note)
     blocks = [
-        (0, 1, "Myvi loan", "installment", "Loan settlement"),
-        (3, 4, "Myvi road tax + insurance", "roadtax", ""),
-        (6, 7, "Myvi service", "maintenance", ""),
-        (9, 10, "Alza loan", "installment", "Loan settlement"),
-        (12, 13, "Alza road tax + insurance", "roadtax", ""),
-        (15, 16, "Alza service", "maintenance", ""),
+        (0, 1, "Loan", "myvi", "Installment", "Loan settlement"),
+        (3, 4, "Road tax + insurance", "myvi", "Road tax + Insurance", ""),
+        (6, 7, "Service", "myvi", "Maintenance", ""),
+        (9, 10, "Loan", "alza", "Installment", "Loan settlement"),
+        (12, 13, "Road tax + insurance", "alza", "Road tax + Insurance", ""),
+        (15, 16, "Service", "alza", "Maintenance", ""),
     ]
     data = rows("Car")[3:]  # data starts at row index 3
     seq = 0
     converted = 0
-    for dc, pc, title, cat, note in blocks:
+    for dc, pc, title, cat, ctype, note in blocks:
         for r in data:
             if len(r) <= pc:
                 continue
@@ -220,7 +222,8 @@ def convert_car():
                 rownote = extra.group(1)
             seq += 1
             add_tx("car", seq, title=title, cat=cat, amount=amt, date=iso,
-                   payer="Joint", status="paid", note=rownote)
+                   payer="Joint", status="paid", note=rownote,
+                   fields={"type": ctype})
             converted += 1
     counts["car"] = converted
 
