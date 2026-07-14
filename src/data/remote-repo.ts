@@ -243,6 +243,14 @@ export async function updateTxsFieldValues(
   await Promise.all(updates.map((u) => updateTx(u.id, { fieldValues: u.fieldValues })));
 }
 /**
+ * Move every entry in a space that uses `fromCat` onto `toCat` in one write —
+ * used when a category is deleted so its entries fall back to "Other" instead
+ * of keeping an orphaned key.
+ */
+export async function reassignCategory(spaceId: string, fromCat: string, toCat: string): Promise<void> {
+  must(await supabase.from('txs').update({ cat: toCat }).eq('household_id', hid()).eq('space_id', spaceId).eq('cat', fromCat));
+}
+/**
  * Apply an entry edit: patch the origin tx and reconcile its fund mirror
  * (create / update / delete / none). Mixed ops → sequential calls.
  */

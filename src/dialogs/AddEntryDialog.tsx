@@ -10,6 +10,7 @@ import {
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import { isoToday } from '../domain/format';
+import { categoriesWithOther, resolveCatKey } from '../domain/selectors';
 import type { FieldDef, Space, TxDir } from '../domain/types';
 
 /**
@@ -177,7 +178,9 @@ export function AddEntryDialog() {
       setSpaceId(editTx.spaceId);
       setDir(editTx.dir);
       setAmount(String(editTx.amount));
-      setCat(editTx.cat);
+      // Normalise onto a category the space still defines; a deleted one → Other.
+      const eSpace = spaces.find((s) => s.id === editTx.spaceId);
+      setCat(eSpace ? resolveCatKey(eSpace, editTx.cat) : editTx.cat);
       setFieldVals({ ...editTx.fieldValues });
       setPayer(editTx.payer ?? '');
       setNote(editTx.note ?? '');
@@ -356,7 +359,7 @@ export function AddEntryDialog() {
           label={catLabel}
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          options={cats.map((c) => ({ value: c.key, label: c.label }))}
+          options={categoriesWithOther({ cats }).map((c) => ({ value: c.key, label: c.label }))}
         />
 
         {primary && (

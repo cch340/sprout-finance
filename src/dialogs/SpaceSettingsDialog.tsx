@@ -13,6 +13,7 @@ import {
   Tag,
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
+import { OTHER_CATEGORY } from '../domain/selectors';
 import type { Category, FieldDef, Space } from '../domain/types';
 
 function slug(s: string): string {
@@ -171,7 +172,9 @@ export function SpaceSettingsDialog() {
   const close = useAppStore((s) => s.closeSpaceSettings);
   const updateSpace = useAppStore((s) => s.updateSpace);
   const deleteField = useAppStore((s) => s.deleteField);
+  const deleteCategory = useAppStore((s) => s.deleteCategory);
   const deleteSpace = useAppStore((s) => s.deleteSpace);
+  const allTxs = useAppStore((s) => s.snapshot.txs);
   const showToast = useAppStore((s) => s.showToast);
   const navigate = useNavigate();
 
@@ -182,6 +185,8 @@ export function SpaceSettingsDialog() {
   const [newField, setNewField] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldDef['type']>('text');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Category pending deletion confirmation (its entries move to "Other").
+  const [confirmCat, setConfirmCat] = useState<string | null>(null);
 
   useEffect(() => {
     if (space) setName(space.name);
@@ -191,6 +196,7 @@ export function SpaceSettingsDialog() {
     setNewField('');
     setNewFieldType('text');
     setConfirmDelete(false);
+    setConfirmCat(null);
   }, [spaceId]);
 
   if (!spaceId || !space) return null;
@@ -207,7 +213,8 @@ export function SpaceSettingsDialog() {
     const label = newCat.trim();
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
-    if (!cats.some((c) => c.key === key)) {
+    // 'other' is the reserved virtual fallback — it can't be created explicitly.
+    if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
       const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
       const next: Category[] = [...cats, c];
       void updateSpace(space.id, { cats: next });
@@ -215,9 +222,17 @@ export function SpaceSettingsDialog() {
     setNewCat('');
     setNewEmoji(undefined);
   };
-  const removeCat = (key: string) => {
-    void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
+  // Two-step delete: ✕ arms confirmation; confirming moves the category's
+  // entries to "Other" (see store deleteCategory).
+  const confirmRemoveCat = () => {
+    if (!confirmCat) return;
+    void deleteCategory(space.id, confirmCat);
+    setConfirmCat(null);
   };
+  const confirmCatLabel = cats.find((c) => c.key === confirmCat)?.label ?? confirmCat;
+  const confirmCatCount = confirmCat
+    ? allTxs.filter((t) => t.spaceId === space.id && t.cat === confirmCat).length
+    : 0;
 
   const setFieldAt = (i: number, next: FieldDef) => {
     void updateSpace(space.id, { fields: fields.map((f, j) => (j === i ? next : f)) });
@@ -332,7 +347,7 @@ export function SpaceSettingsDialog() {
             {cats.length > 0 && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {cats.map((c) => (
-                  <Tag key={c.key} onRemove={() => removeCat(c.key)}>
+                  <Tag key={c.key} onRemove={() => setConfirmCat(c.key)}>
                     <CategoryIcon
                       category={c.key}
                       emoji={c.emoji}
@@ -343,6 +358,33 @@ export function SpaceSettingsDialog() {
                     {c.label}
                   </Tag>
                 ))}
+              </div>
+            )}
+            {confirmCat && (
+              <div
+                style={{
+                  padding: '10px 12px',
+                  background: 'var(--surface-sunken)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-2)',
+                }}
+              >
+                <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                  Delete “{confirmCatLabel}”?{' '}
+                  {confirmCatCount > 0
+                    ? `${confirmCatCount} ${confirmCatCount === 1 ? 'entry' : 'entries'} will move to “Other”.`
+                    : 'It has no entries.'}
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="danger" size="sm" iconStart="trash" onClick={confirmRemoveCat}>
+                    Delete category
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmCat(null)}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
