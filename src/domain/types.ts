@@ -60,6 +60,8 @@ export interface RecurringItem {
   label: string;
   cat: string;
   amount: number;
+  /** Free-text detail shown under the label (e.g. a per-person split). */
+  remark?: string;
 }
 
 export interface Tx {
