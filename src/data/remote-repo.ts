@@ -12,7 +12,6 @@ import type {
   Household, Person, RecurringItem, Settings, Snapshot, Space, Tx,
 } from '../domain/types';
 import { migrateLegacyCategory } from '../domain/legacy-emoji';
-import type { MirrorAction } from '../domain/entry-links';
 
 // ---- current household context -------------------------------------------
 let currentHouseholdId: string | null = null;
@@ -253,25 +252,6 @@ export async function updateTxsFieldValues(
  */
 export async function reassignCategory(spaceId: string, fromCat: string, toCat: string): Promise<void> {
   must(await supabase.from('txs').update({ cat: toCat }).eq('household_id', hid()).eq('space_id', spaceId).eq('cat', fromCat));
-}
-/**
- * Apply an entry edit: patch the origin tx and reconcile its fund mirror
- * (create / update / delete / none). Mixed ops → sequential calls.
- */
-export async function applyEntryUpdate(
-  originId: string,
-  originPatch: Partial<Tx>,
-  mirror: MirrorAction,
-): Promise<void> {
-  await updateTx(originId, originPatch);
-  if (mirror.kind === 'update' && mirror.id) {
-    await updateTx(mirror.id, mirror.patch ?? {});
-  } else if (mirror.kind === 'delete' && mirror.id) {
-    await deleteTx(mirror.id);
-  } else if (mirror.kind === 'create' && mirror.create) {
-    if (mirror.removeId) await deleteTx(mirror.removeId);
-    await addTx(mirror.create);
-  }
 }
 
 // ---- spaces --------------------------------------------------------------
