@@ -328,7 +328,7 @@ export function AddEntryDialog() {
         />
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--space-3)' }}>
-          <CategoryIcon category={cat} emoji={cats.find((c) => c.key === cat)?.emoji} size={52} />
+          <CategoryIcon category={cat} icon={cats.find((c) => c.key === cat)?.icon} size={52} />
           <div style={{ flex: 1 }}>
             <Input
               label="Amount"

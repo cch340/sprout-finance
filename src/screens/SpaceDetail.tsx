@@ -6,8 +6,8 @@ import {
   Badge,
   Button,
   Card,
-  CategoryEmojiPicker,
   CategoryIcon,
+  CategoryIconPicker,
   Dialog,
   Icon,
   IconButton,
@@ -18,7 +18,7 @@ import {
   Select,
   Tag,
 } from '../design-system';
-import type { BadgeTone } from '../design-system';
+import type { BadgeTone, IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Category, RecurringItem, Space, Tx } from '../domain/types';
 import { fundBalance, incomeOf, leftThisMonth, OTHER_CATEGORY, resolveCatKey, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
@@ -397,7 +397,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Category pending deletion confirmation (its entries move to "Other").
   const [confirmCat, setConfirmCat] = useState<string | null>(null);
   const [newCat, setNewCat] = useState('');
-  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
+  const [newIcon, setNewIcon] = useState<IconName | undefined>(undefined);
   const [visible, setVisible] = useState(PAGE);
   // Carry-forward dialog: null closed; otherwise the source/target months to prefill.
   const [carry, setCarry] = useState<{ source?: string; target?: string } | null>(null);
@@ -487,7 +487,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const currentMonthHasEntries = carryable.some((t) => t.date.slice(0, 7) === month);
   const showCarryBanner = carryable.length > 0 && !currentMonthHasEntries && latestMonth && latestMonth !== month;
 
-  // Two-step delete: clicking ✕ arms a confirmation; confirming reassigns the
+  // Two-step delete: clicking X arms a confirmation; confirming reassigns the
   // category's entries to "Other" (see store deleteCategory).
   const confirmRemoveCat = () => {
     if (!confirmCat) return;
@@ -501,11 +501,11 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     const key = slug(label) || `cat-${cats.length}`;
     // 'other' is the reserved virtual fallback — it can't be created explicitly.
     if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
-      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+      const c: Category = newIcon ? { key, label, icon: newIcon } : { key, label };
       void updateSpace(space.id, { cats: [...cats, c] });
     }
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
   };
   // Whether any entry in this space falls into the virtual "Other" bucket.
   const hasOther = snapshot.txs.some(
@@ -551,7 +551,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
                 onClick={edit ? undefined : () => toggleCat(c.key)}
                 onRemove={edit ? () => setConfirmCat(c.key) : undefined}
               >
-                <CategoryIcon category={c.key} emoji={c.emoji} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
+                <CategoryIcon category={c.key} icon={c.icon} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
                 {c.label}
               </Tag>
             ))}
@@ -620,9 +620,9 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           {edit && (
             <div style={{ marginTop: 10 }}>
               <span style={{ display: 'block', font: 'var(--font-caption)', color: 'var(--text-muted)', margin: '0 4px 6px' }}>
-                Pick an emoji for the new category
+                Pick an icon for the new category
               </span>
-              <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} style={{ padding: '0 4px' }} />
+              <CategoryIconPicker value={newIcon} onChange={setNewIcon} style={{ padding: '0 4px' }} />
             </div>
           )}
         </div>
@@ -694,7 +694,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           shown.map((t, i) => (
             <ListRow
               key={t.id}
-              leading={<CategoryIcon category={t.cat} emoji={cats.find((c) => c.key === t.cat)?.emoji} />}
+              leading={<CategoryIcon category={t.cat} icon={cats.find((c) => c.key === t.cat)?.icon} />}
               title={t.title}
               subtitle={subtitleFor(space, t)}
               trailing={
@@ -780,7 +780,7 @@ function RecurringPanel({ space }: { space: Space }) {
         {items.map((r) => (
           <ListRow
             key={r.id}
-            leading={<CategoryIcon category={r.cat} emoji={space.cats.find((c) => c.key === r.cat)?.emoji} />}
+            leading={<CategoryIcon category={r.cat} icon={space.cats.find((c) => c.key === r.cat)?.icon} />}
             title={r.label}
             subtitle={r.remark || undefined}
             trailing={<Amount value={r.amount} kind={isFund ? 'in' : 'neutral'} showSign={isFund} />}

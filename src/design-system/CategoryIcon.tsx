@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes } from 'react';
-import { Icon, type IconName } from './Icon';
+import { Icon, PATHS, type IconName } from './Icon';
 
 const NEUTRAL = { bg: 'var(--surface-hover)', fg: 'var(--text-muted)' };
 
@@ -54,7 +54,8 @@ export const categoryKeys = Object.keys(CATEGORIES);
 
 export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'style'> {
   category?: string;
-  icon?: IconName;
+  /** Explicit icon name (domain stores it as a plain string); unknown names fall back to the keyed mapping. */
+  icon?: string;
   size?: number;
   radius?: string;
   className?: string;
@@ -75,6 +76,7 @@ export function CategoryIcon({
   ...rest
 }: CategoryIconProps) {
   const def = CATEGORIES[category] || CATEGORIES.other;
+  const iconName = icon && icon in PATHS ? (icon as IconName) : def.icon;
   return (
     <span
       className={`sprout-cat ${className}`}
@@ -94,7 +96,7 @@ export function CategoryIcon({
       }}
       {...rest}
     >
-      <Icon name={icon || def.icon} size={Math.round(size * 0.5)} />
+      <Icon name={iconName} size={Math.round(size * 0.5)} />
     </span>
   );
 }

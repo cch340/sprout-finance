@@ -14,7 +14,7 @@ import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Space, Tx } from '../domain/types';
 import {
-  catEmojiOf,
+  catIconOf,
   entryCount,
   fundBalance,
   spendSpaces as selSpendSpaces,
@@ -281,8 +281,9 @@ function MobileHome() {
       {/* greeting */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
-            {greetingWord()}, {name} 🌿
+          <div style={{ font: 'var(--font-caption)', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            {greetingWord()}, {name}
+            <Icon name="sprout" size={18} style={{ display: 'inline-block', verticalAlign: '-0.1em', color: 'var(--accent)' }} />
           </div>
           <div style={{ font: 'var(--font-h2)', color: 'var(--text-strong)' }}>{monthLabel(month)}</div>
         </div>
@@ -335,7 +336,7 @@ function MobileHome() {
             recent.map((e, i) => (
               <ListRow
                 key={e.id}
-                leading={<CategoryIcon category={e.cat} emoji={catEmojiOf(spaces, e.spaceId, e.cat)} />}
+                leading={<CategoryIcon category={e.cat} icon={catIconOf(spaces, e.spaceId, e.cat)} />}
                 title={e.title}
                 subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
                 trailing={<Amount value={e.amount} />}
@@ -374,7 +375,7 @@ function DesktopOverview() {
               recent.map((e, i) => (
                 <ListRow
                   key={e.id}
-                  leading={<CategoryIcon category={e.cat} emoji={catEmojiOf(spaces, e.spaceId, e.cat)} />}
+                  leading={<CategoryIcon category={e.cat} icon={catIconOf(spaces, e.spaceId, e.cat)} />}
                   title={e.title}
                   subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
                   trailing={<Amount value={e.amount} />}
@@ -394,7 +395,7 @@ function DesktopOverview() {
               bills.map((c, i) => (
                 <ListRow
                   key={c.id}
-                  leading={<CategoryIcon category={c.cat} emoji={catEmojiOf(spaces, c.spaceId, c.cat)} />}
+                  leading={<CategoryIcon category={c.cat} icon={catIconOf(spaces, c.spaceId, c.cat)} />}
                   title={c.title}
                   subtitle={`Paid by ${c.payer || 'Unspecified'}`}
                   trailing={<Amount value={c.amount} />}

@@ -323,7 +323,10 @@ export function Onboarding() {
             <Icon name="check" size={44} strokeWidth={2.6} style={{ color: '#fff' }} />
           </span>
           <div>
-            <h1 style={{ font: 'var(--font-h1)', color: 'var(--text-strong)', margin: 0 }}>You&apos;re all set, {p1.trim() || 'friend'}! 🌿</h1>
+            <h1 style={{ font: 'var(--font-h1)', color: 'var(--text-strong)', margin: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
+              You&apos;re all set, {p1.trim() || 'friend'}!
+              <Icon name="sprout" size={24} style={{ display: 'inline-block', verticalAlign: '-0.1em', color: 'var(--accent)' }} />
+            </h1>
             <p style={{ font: 'var(--font-body)', fontSize: 'var(--text-lg)', color: 'var(--text-muted)', margin: 'var(--space-3) auto 0', maxWidth: '30ch' }}>
               {chosenIds.length} spaces ready for you and {p2.trim() || 'your partner'}. Budget set to{' '}
               <strong style={{ color: 'var(--text-body)' }}>RM {budgetTotal.toLocaleString()}</strong>.
