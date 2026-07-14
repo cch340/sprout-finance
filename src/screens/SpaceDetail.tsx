@@ -340,6 +340,8 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Multi-select category filter: an empty set means "All".
   const [catSel, setCatSel] = useState<Set<string>>(new Set());
   const [monthSel, setMonthSel] = useState('all');
+  // Custom select-field filters: field.key → selected value ('all'/absent = no filter).
+  const [fieldSel, setFieldSel] = useState<Record<string, string>>({});
   const [edit, setEdit] = useState(false);
   const [newCat, setNewCat] = useState('');
   const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
@@ -358,6 +360,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   useEffect(() => {
     setCatSel(new Set());
     setMonthSel('all');
+    setFieldSel({});
     setEdit(false);
   }, [space.id]);
 
@@ -370,6 +373,32 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     return [{ value: 'all', label: 'All months' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
   }, [snapshot.txs, space.id]);
 
+  // Data-driven filters for select-type custom fields (mirrors monthOptions).
+  // For each select field, collect the distinct non-empty values present in this
+  // space's txs; order the field's preset options first (only those in data),
+  // then remaining values alphabetically. Fields with no values are dropped.
+  const fieldFilters = useMemo(() => {
+    const selectFields = space.fields.filter((f) => f.type === 'select');
+    if (selectFields.length === 0) return [] as { field: (typeof selectFields)[number]; values: string[] }[];
+    const seen: Record<string, Set<string>> = {};
+    for (const f of selectFields) seen[f.key] = new Set();
+    for (const t of snapshot.txs) {
+      if (t.spaceId !== space.id) continue;
+      for (const f of selectFields) {
+        const v = t.fieldValues[f.key];
+        if (v) seen[f.key].add(v);
+      }
+    }
+    return selectFields
+      .map((field) => {
+        const present = seen[field.key];
+        const preset = (field.options ?? []).filter((o) => present.has(o));
+        const rest = [...present].filter((v) => !preset.includes(v)).sort((a, b) => a.localeCompare(b));
+        return { field, values: [...preset, ...rest] };
+      })
+      .filter((f) => f.values.length > 0);
+  }, [snapshot.txs, space.id, space.fields]);
+
   // The space ledger shows the FULL history (all months) by default; the month
   // Select narrows it. Month-scoped roll-ups (Hero "spent this month", Home,
   // Reports) stay parameterized by `month`, unaffected by this view state.
@@ -377,12 +406,15 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     let l = snapshot.txs.filter((t) => t.spaceId === space.id);
     if (catSel.size > 0) l = l.filter((t) => catSel.has(t.cat));
     if (monthSel !== 'all') l = l.filter((t) => t.date.slice(0, 7) === monthSel);
+    for (const [key, val] of Object.entries(fieldSel)) {
+      if (val && val !== 'all') l = l.filter((t) => t.fieldValues[key] === val);
+    }
     return l.slice().sort(byDateDesc);
-  }, [snapshot.txs, space.id, catSel, monthSel]);
+  }, [snapshot.txs, space.id, catSel, monthSel, fieldSel]);
 
   // Incremental "show more": render the first N matching rows, reveal PAGE more
   // at a time. Reset the chunk whenever the filters or space change.
-  useEffect(() => setVisible(PAGE), [space.id, catSel, monthSel]);
+  useEffect(() => setVisible(PAGE), [space.id, catSel, monthSel, fieldSel]);
   const shown = list.slice(0, visible);
 
   // Carry forward: entries that can be duplicated into another month (fund
@@ -505,8 +537,8 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           </div>
         </Card>
       )}
-      {(monthOptions.length > 1 || (carryable.length > 0 && !showCarryBanner)) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', justifyContent: 'space-between' }}>
+      {(monthOptions.length > 1 || fieldFilters.length > 0 || (carryable.length > 0 && !showCarryBanner)) && (
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-3)', justifyContent: 'space-between' }}>
           {monthOptions.length > 1 ? (
             <div style={{ maxWidth: 200, flex: 1 }}>
               <Select
@@ -520,6 +552,20 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           ) : (
             <span />
           )}
+          {fieldFilters.map(({ field, values }) => (
+            <div key={field.key} style={{ maxWidth: 200, flex: 1 }}>
+              <Select
+                size="sm"
+                aria-label={`Filter by ${field.label}`}
+                value={fieldSel[field.key] ?? 'all'}
+                onChange={(e) => setFieldSel((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                options={[
+                  { value: 'all', label: `${field.label}: all` },
+                  ...values.map((v) => ({ value: v, label: v })),
+                ]}
+              />
+            </div>
+          ))}
           {carryable.length > 0 && !showCarryBanner && (
             <Button
               variant="ghost"
