@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed-demo';
 import { isoMonth } from './format';
 import {
-  fundBalance, history, incomeOf, monthsInRange, payerSpaceBreakdown, spendByPerson,
+  categoriesWithOther, fundBalance, history, incomeOf, monthsInRange, OTHER_CATEGORY,
+  payerSpaceBreakdown, resolveCatKey, spendByPerson,
   spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
   totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
@@ -156,6 +157,24 @@ describe('range-aware reports selectors', () => {
     const rangeSum = bySpace.reduce((a, s) => a + s.value, 0);
     const historySum = history(snap.spaces, snap.txs, 6, REF).reduce((a, h) => a + h.value, 0);
     expect(rangeSum).toBeCloseTo(historySum, 2);
+  });
+
+  it('categoriesWithOther appends the virtual Other, without duplicating it', () => {
+    const withCats = { cats: [{ key: 'a', label: 'A' }] };
+    const out = categoriesWithOther(withCats);
+    expect(out.map((c) => c.key)).toEqual(['a', OTHER_CATEGORY.key]);
+    // Empty space still offers Other.
+    expect(categoriesWithOther({ cats: [] })).toEqual([OTHER_CATEGORY]);
+    // Never doubled if a space somehow already carries an 'other'.
+    const dup = { cats: [{ key: 'other', label: 'Other' }] };
+    expect(categoriesWithOther(dup).filter((c) => c.key === 'other')).toHaveLength(1);
+  });
+
+  it('resolveCatKey maps unknown/deleted categories onto Other', () => {
+    const space = { cats: [{ key: 'a', label: 'A' }] };
+    expect(resolveCatKey(space, 'a')).toBe('a');
+    expect(resolveCatKey(space, 'deleted-key')).toBe(OTHER_CATEGORY.key);
+    expect(resolveCatKey(space, 'other')).toBe(OTHER_CATEGORY.key);
   });
 
   it('payerSpaceBreakdown yields non-zero per-space rows for a payer', () => {

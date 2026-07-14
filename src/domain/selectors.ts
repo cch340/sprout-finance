@@ -2,8 +2,28 @@
 // (data, args) => value with no side effects. Month args are ISO 'yyyy-mm'.
 // Semantics mirror the prototype's data.js exactly, parameterized by month.
 
-import type { RecurringItem, Snapshot, Space, Tx } from './types';
+import type { Category, RecurringItem, Snapshot, Space, Tx } from './types';
 import { isoMonth, monthShort } from './format';
+
+/**
+ * Reserved fallback category. It is virtual — never stored in a space's `cats`
+ * nor written as a DB row — and always available for selection/filtering. Any
+ * entry whose `cat` isn't one of its space's categories (e.g. after that
+ * category was deleted) is treated as "Other".
+ */
+export const OTHER_CATEGORY: Category = { key: 'other', label: 'Other' };
+
+/** A space's own categories followed by the reserved virtual "Other". */
+export function categoriesWithOther(space: Pick<Space, 'cats'>): Category[] {
+  return space.cats.some((c) => c.key === OTHER_CATEGORY.key)
+    ? space.cats
+    : [...space.cats, OTHER_CATEGORY];
+}
+
+/** Map a tx's category key to one the space defines, else the "Other" key. */
+export function resolveCatKey(space: Pick<Space, 'cats'>, catKey: string): string {
+  return space.cats.some((c) => c.key === catKey) ? catKey : OTHER_CATEGORY.key;
+}
 
 const inMonth = (t: Tx, month: string): boolean => t.date.slice(0, 7) === month;
 

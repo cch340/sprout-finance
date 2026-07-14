@@ -20,7 +20,7 @@ import {
 import type { BadgeTone } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Category, Space, Tx } from '../domain/types';
-import { fundBalance, incomeOf, leftThisMonth, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
+import { fundBalance, incomeOf, leftThisMonth, OTHER_CATEGORY, resolveCatKey, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
 import { CarryForwardDialog } from '../dialogs/CarryForwardDialog';
 
@@ -351,6 +351,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
+  const deleteCategory = useAppStore((s) => s.deleteCategory);
   const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   // Multi-select category filter: an empty set means "All".
   const [catSel, setCatSel] = useState<Set<string>>(new Set());
@@ -358,6 +359,8 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Custom select-field filters: field.key → selected value ('all'/absent = no filter).
   const [fieldSel, setFieldSel] = useState<Record<string, string>>({});
   const [edit, setEdit] = useState(false);
+  // Category pending deletion confirmation (its entries move to "Other").
+  const [confirmCat, setConfirmCat] = useState<string | null>(null);
   const [newCat, setNewCat] = useState('');
   const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
   const [visible, setVisible] = useState(PAGE);
@@ -377,6 +380,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     setMonthSel('all');
     setFieldSel({});
     setEdit(false);
+    setConfirmCat(null);
   }, [space.id]);
 
   // Months that actually have entries in this space (newest first), for the
@@ -419,7 +423,9 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Reports) stay parameterized by `month`, unaffected by this view state.
   const list = useMemo(() => {
     let l = snapshot.txs.filter((t) => t.spaceId === space.id);
-    if (catSel.size > 0) l = l.filter((t) => catSel.has(t.cat));
+    // Match on the resolved key so a "Other" selection also catches entries
+    // whose category was deleted (their key no longer maps to a space category).
+    if (catSel.size > 0) l = l.filter((t) => catSel.has(resolveCatKey(space, t.cat)));
     if (monthSel !== 'all') l = l.filter((t) => t.date.slice(0, 7) === monthSel);
     for (const [key, val] of Object.entries(fieldSel)) {
       if (val && val !== 'all') l = l.filter((t) => t.fieldValues[key] === val);
@@ -446,21 +452,34 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const currentMonthHasEntries = carryable.some((t) => t.date.slice(0, 7) === month);
   const showCarryBanner = carryable.length > 0 && !currentMonthHasEntries && latestMonth && latestMonth !== month;
 
-  const removeCat = (key: string) => {
-    void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
-    if (catSel.has(key)) toggleCat(key);
+  // Two-step delete: clicking ✕ arms a confirmation; confirming reassigns the
+  // category's entries to "Other" (see store deleteCategory).
+  const confirmRemoveCat = () => {
+    if (!confirmCat) return;
+    void deleteCategory(space.id, confirmCat);
+    if (catSel.has(confirmCat)) toggleCat(confirmCat);
+    setConfirmCat(null);
   };
   const addCat = () => {
     const label = newCat.trim();
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
-    if (!cats.some((c) => c.key === key)) {
+    // 'other' is the reserved virtual fallback — it can't be created explicitly.
+    if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
       const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
       void updateSpace(space.id, { cats: [...cats, c] });
     }
     setNewCat('');
     setNewEmoji(undefined);
   };
+  // Whether any entry in this space falls into the virtual "Other" bucket.
+  const hasOther = snapshot.txs.some(
+    (t) => t.spaceId === space.id && !cats.some((c) => c.key === t.cat),
+  );
+  const confirmCatLabel = cats.find((c) => c.key === confirmCat)?.label ?? confirmCat;
+  const confirmCatCount = confirmCat
+    ? snapshot.txs.filter((t) => t.spaceId === space.id && t.cat === confirmCat).length
+    : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
@@ -495,12 +514,22 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
                 key={c.key}
                 selected={!edit && catSel.has(c.key)}
                 onClick={edit ? undefined : () => toggleCat(c.key)}
-                onRemove={edit ? () => removeCat(c.key) : undefined}
+                onRemove={edit ? () => setConfirmCat(c.key) : undefined}
               >
                 <CategoryIcon category={c.key} emoji={c.emoji} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
                 {c.label}
               </Tag>
             ))}
+            {/* "Other" — virtual fallback; a filter chip only, never editable. */}
+            {!edit && hasOther && (
+              <Tag
+                selected={catSel.has(OTHER_CATEGORY.key)}
+                onClick={() => toggleCat(OTHER_CATEGORY.key)}
+              >
+                <CategoryIcon category={OTHER_CATEGORY.key} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
+                {OTHER_CATEGORY.label}
+              </Tag>
+            )}
             {edit && (
               <input
                 value={newCat}
@@ -525,6 +554,34 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
               />
             )}
           </div>
+          {edit && confirmCat && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: '10px 12px',
+                background: 'var(--surface-sunken)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+              }}
+            >
+              <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                Delete “{confirmCatLabel}”?{' '}
+                {confirmCatCount > 0
+                  ? `${confirmCatCount} ${confirmCatCount === 1 ? 'entry' : 'entries'} will move to “Other”.`
+                  : 'It has no entries.'}
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button variant="danger" size="sm" iconStart="trash" onClick={confirmRemoveCat}>
+                  Delete category
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setConfirmCat(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
           {edit && (
             <div style={{ marginTop: 10 }}>
               <span style={{ display: 'block', font: 'var(--font-caption)', color: 'var(--text-muted)', margin: '0 4px 6px' }}>

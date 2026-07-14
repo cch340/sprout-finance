@@ -9,6 +9,7 @@ import { clearCache, loadCache, saveCache } from '../data/db';
 import { findMirror, planEntryUpdate, resolvePaidFromFund } from '../domain/entry-links';
 import type { EntryEdit } from '../domain/entry-links';
 import { formatMoney, isoMonth } from '../domain/format';
+import { OTHER_CATEGORY } from '../domain/selectors';
 import { applyTheme, initTheme, nextTheme } from './theme';
 import {
   DEFAULT_HOUSEHOLD, DEFAULT_SETTINGS,
@@ -137,6 +138,11 @@ export interface AppState {
    * (or resurface if a same-keyed field is later recreated).
    */
   deleteField: (spaceId: string, fieldKey: string) => Promise<void>;
+  /**
+   * Remove a category from a space and reassign its entries to the reserved
+   * "Other" fallback, so no entry keeps an orphaned category key.
+   */
+  deleteCategory: (spaceId: string, catKey: string) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
   addRecurring: (item: Omit<RecurringItem, 'id'>) => Promise<RecurringItem>;
   updateRecurring: (id: string, patch: Partial<RecurringItem>) => Promise<void>;
@@ -473,6 +479,29 @@ export const useAppStore = create<AppState>((set, get) => ({
       spaces: snapshot.spaces.map((s) => (s.id === spaceId ? { ...s, fields: nextFields } : s)),
       txs: snapshot.txs.map((t) =>
         strippedById.has(t.id) ? { ...t, fieldValues: strippedById.get(t.id)! } : t,
+      ),
+    });
+  },
+
+  async deleteCategory(spaceId, catKey) {
+    if (catKey === OTHER_CATEGORY.key) return; // reserved virtual fallback — not deletable
+    const { snapshot } = get();
+    const space = snapshot.spaces.find((s) => s.id === spaceId);
+    if (!space) return;
+    const nextCats = space.cats.filter((c) => c.key !== catKey);
+    const affected = snapshot.txs.some((t) => t.spaceId === spaceId && t.cat === catKey);
+    // Drop the category first, then rehome its entries to "Other". A failure on
+    // the reassign leaves the pre-existing behaviour (orphaned key that already
+    // renders as "Other"), never a half-updated space.
+    const ok = await guardWrite(get, async () => {
+      await repo.updateSpace(spaceId, { cats: nextCats });
+      if (affected) await repo.reassignCategory(spaceId, catKey, OTHER_CATEGORY.key);
+    });
+    if (!ok) return;
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) => (s.id === spaceId ? { ...s, cats: nextCats } : s)),
+      txs: snapshot.txs.map((t) =>
+        t.spaceId === spaceId && t.cat === catKey ? { ...t, cat: OTHER_CATEGORY.key } : t,
       ),
     });
   },
