@@ -160,8 +160,8 @@ export function AddEntryDialog() {
   const [amount, setAmount] = useState('');
   const [cat, setCat] = useState(cats[0]?.key ?? 'other');
   const [fieldVals, setFieldVals] = useState<Record<string, string>>({});
-  // Optional "Paid from": '' = not specified, a person name (attribution only),
-  // or a fund's short/name (also records a mirror withdrawal in that fund).
+  // Optional "Paid from" attribution only: '' = not specified, a person name, or
+  // a fund's short/name (a reference label; it does not move money between spaces).
   const [payer, setPayer] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(isoToday());
@@ -217,9 +217,10 @@ export function AddEntryDialog() {
   const setField = (key: string, v: string) =>
     setFieldVals((s) => ({ ...s, [key]: v }));
 
-  // "Paid from" options: an empty default, each household person (attribution
-  // only), then each fund space. A fund's value is its short label (or name),
-  // which also matches legacy 'Joint' payer strings so old + new data co-bucket.
+  // "Paid from" options: an empty default, each household person, then each fund
+  // space. A fund's value is its short label (or name), which also matches legacy
+  // 'Joint' payer strings so old + new data co-bucket. Attribution only — the
+  // selection is a reference label and never moves money between spaces.
   const payerOptions = useMemo(() => {
     const persons = people
       .filter((p) => p.id !== 'leo')
@@ -230,12 +231,6 @@ export function AddEntryDialog() {
       .map((f) => ({ value: f.short ?? f.name, label: f.name }));
     return [{ value: '', label: 'Not specified' }, ...persons, ...funds];
   }, [people, spaces]);
-
-  // If the chosen payer maps to a fund space, wire the mirror withdrawal.
-  const paidFromFundId = useMemo(
-    () => spaces.find((s) => s.kind === 'fund' && (s.short ?? s.name) === payer)?.id,
-    [spaces, payer],
-  );
 
   const amountNum = parseFloat(amount) || 0;
   const amountInvalid = showError && amountNum <= 0;
@@ -257,7 +252,6 @@ export function AddEntryDialog() {
         cat,
         dir,
         payer: isPersonal ? undefined : payer,
-        paidFromFundId: isPersonal ? undefined : paidFromFundId,
         note: note.trim(),
         title,
         date,
@@ -272,7 +266,6 @@ export function AddEntryDialog() {
       cat,
       dir,
       payer: isPersonal ? undefined : payer,
-      paidFromFundId: isPersonal ? undefined : paidFromFundId,
       note: note.trim(),
       title,
       date,
