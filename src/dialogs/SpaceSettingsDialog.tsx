@@ -34,6 +34,9 @@ function FieldRow({
   onChange: (next: FieldDef) => void;
 }) {
   const [np, setNp] = useState('');
+  // Two-step delete: the ✕ arms an inline confirm rather than removing at once,
+  // since removing a field also wipes its saved values from every entry.
+  const [confirming, setConfirming] = useState(false);
   // Inline rename — commits on blur/Enter. Only the display label changes;
   // the field's key (which entry values are stored under) stays stable.
   const [label, setLabel] = useState(field.label);
@@ -99,9 +102,39 @@ function FieldRow({
         {field.primary && <Badge tone="accent">title</Badge>}
         <Badge tone={isSelect ? 'accent' : 'neutral'}>{typeLabel}</Badge>
         {!field.primary && onRemove && (
-          <IconButton icon="x" label="Remove field" variant="ghost" size="sm" onClick={onRemove} />
+          <IconButton
+            icon="x"
+            label="Remove field"
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirming(true)}
+          />
         )}
       </div>
+      {confirming && onRemove && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+            Remove “{field.label}”? Its saved values on existing entries will be deleted too. This
+            can’t be undone.
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              variant="danger"
+              size="sm"
+              iconStart="trash"
+              onClick={() => {
+                setConfirming(false);
+                onRemove();
+              }}
+            >
+              Remove field
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       {opts.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {opts.map((o, i) => (
@@ -137,6 +170,7 @@ export function SpaceSettingsDialog() {
     | undefined;
   const close = useAppStore((s) => s.closeSpaceSettings);
   const updateSpace = useAppStore((s) => s.updateSpace);
+  const deleteField = useAppStore((s) => s.deleteField);
   const deleteSpace = useAppStore((s) => s.deleteSpace);
   const showToast = useAppStore((s) => s.showToast);
   const navigate = useNavigate();
@@ -197,9 +231,6 @@ export function SpaceSettingsDialog() {
     void updateSpace(space.id, { fields: [...fields, field] });
     setNewField('');
     setNewFieldType('text');
-  };
-  const removeField = (i: number) => {
-    void updateSpace(space.id, { fields: fields.filter((_, j) => j !== i) });
   };
 
   const doDelete = async () => {
@@ -345,7 +376,7 @@ export function SpaceSettingsDialog() {
                 <FieldRow
                   key={f.key + i}
                   field={f}
-                  onRemove={f.primary ? undefined : () => removeField(i)}
+                  onRemove={f.primary ? undefined : () => void deleteField(space.id, f.key)}
                   onChange={(next) => setFieldAt(i, next)}
                 />
               ))}
