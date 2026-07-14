@@ -9,6 +9,7 @@ import {
   CategoryEmojiPicker,
   CategoryIcon,
   Dialog,
+  Icon,
   IconButton,
   Input,
   ListRow,
@@ -19,7 +20,7 @@ import {
 } from '../design-system';
 import type { BadgeTone } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
-import type { Category, Space, Tx } from '../domain/types';
+import type { Category, RecurringItem, Space, Tx } from '../domain/types';
 import { fundBalance, incomeOf, leftThisMonth, OTHER_CATEGORY, resolveCatKey, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
 import { CarryForwardDialog } from '../dialogs/CarryForwardDialog';
@@ -137,43 +138,68 @@ function RecurringDialog({
   onClose,
   spaceId,
   cats,
+  isFund,
+  editItem,
 }: {
   open: boolean;
   onClose: () => void;
   spaceId: string;
   cats: Category[];
+  isFund: boolean;
+  /** When set, the dialog edits this item (shows Delete); otherwise it adds. */
+  editItem?: RecurringItem | null;
 }) {
   const addRecurring = useAppStore((s) => s.addRecurring);
+  const updateRecurring = useAppStore((s) => s.updateRecurring);
+  const deleteRecurring = useAppStore((s) => s.deleteRecurring);
+  const isEdit = Boolean(editItem);
+  const noun = isFund ? 'contribution' : 'commitment';
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [remark, setRemark] = useState('');
   const [cat, setCat] = useState(cats[0]?.key ?? 'money');
   useEffect(() => {
     if (open) {
-      setLabel('');
-      setAmount('');
-      setRemark('');
-      setCat(cats[0]?.key ?? 'money');
+      setLabel(editItem?.label ?? '');
+      setAmount(editItem ? String(editItem.amount) : '');
+      setRemark(editItem?.remark ?? '');
+      setCat(editItem?.cat ?? cats[0]?.key ?? 'money');
     }
-  }, [open, cats]);
-  const add = () => {
+  }, [open, cats, editItem]);
+  const save = () => {
     const r = remark.trim();
-    void addRecurring({ spaceId, label, cat, amount: parseFloat(amount) || 0, ...(r ? { remark: r } : {}) });
+    const fields = { label, cat, amount: parseFloat(amount) || 0, remark: r || undefined };
+    if (isEdit && editItem) void updateRecurring(editItem.id, fields);
+    else void addRecurring({ spaceId, ...fields });
+    onClose();
+  };
+  const remove = () => {
+    if (editItem) void deleteRecurring(editItem.id);
     onClose();
   };
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title="Add commitment"
-      description="A fixed amount that repeats every month."
+      title={`${isEdit ? 'Edit' : 'Add'} ${noun}`}
+      description={`A fixed amount that ${isFund ? 'builds this fund' : 'repeats'} every month.`}
       footer={
         <>
+          {isEdit && (
+            <Button
+              variant="ghost"
+              iconStart="trash"
+              onClick={remove}
+              style={{ color: 'var(--danger-500)', marginRight: 'auto' }}
+            >
+              Delete
+            </Button>
+          )}
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button iconStart="check" onClick={add} disabled={!label || !amount}>
-            Add
+          <Button iconStart="check" onClick={save} disabled={!label || !amount}>
+            {isEdit ? 'Save' : 'Add'}
           </Button>
         </>
       }
@@ -707,14 +733,14 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
 // ---- recurring -----------------------------------------------------------
 function RecurringPanel({ space }: { space: Space }) {
   const snapshot = useAppStore((s) => s.snapshot);
-  const deleteRecurring = useAppStore((s) => s.deleteRecurring);
-  const [edit, setEdit] = useState(false);
-  const [dlg, setDlg] = useState(false);
+  // null = closed, 'add' = add dialog, or the item being viewed/edited.
+  const [dlg, setDlg] = useState<'add' | RecurringItem | null>(null);
 
   const isFund = space.kind === 'fund';
   const items = snapshot.recurring.filter((r) => r.spaceId === space.id);
   const sum = items.reduce((a, r) => a + r.amount, 0);
-  useEffect(() => setEdit(false), [space.id]);
+  const noun = isFund ? 'contribution' : 'commitment';
+  useEffect(() => setDlg(null), [space.id]);
 
   return (
     <div>
@@ -723,14 +749,14 @@ function RecurringPanel({ space }: { space: Space }) {
           {isFund ? 'How the fund is formed' : 'Monthly commitments'}
         </span>
         <button
-          onClick={() => setEdit((e) => !e)}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', font: 'var(--font-label)', color: 'var(--accent)', padding: 4 }}
+          onClick={() => setDlg('add')}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', cursor: 'pointer', font: 'var(--font-label)', color: 'var(--accent)', padding: 4 }}
         >
-          {edit ? 'Done' : 'Edit'}
+          <Icon name="plus" size={16} /> Add
         </button>
       </div>
       <Card padding="sm">
-        {items.length === 0 && !edit && (
+        {items.length === 0 && (
           <div
             style={{
               padding: 'var(--space-8) var(--space-5)',
@@ -746,8 +772,8 @@ function RecurringPanel({ space }: { space: Space }) {
                 ? 'No contributions yet. Add the amounts that build this fund each month.'
                 : 'No recurring items yet. Add the fixed amounts that repeat every month.'}
             </p>
-            <Button variant="secondary" iconStart="plus" onClick={() => setDlg(true)}>
-              {isFund ? 'Add contribution' : 'Add recurring'}
+            <Button variant="secondary" iconStart="plus" onClick={() => setDlg('add')}>
+              Add {noun}
             </Button>
           </div>
         )}
@@ -757,28 +783,11 @@ function RecurringPanel({ space }: { space: Space }) {
             leading={<CategoryIcon category={r.cat} emoji={space.cats.find((c) => c.key === r.cat)?.emoji} />}
             title={r.label}
             subtitle={r.remark || undefined}
-            trailing={
-              edit ? (
-                <IconButton icon="x" label="Remove" variant="ghost" size="sm" onClick={() => void deleteRecurring(r.id)} />
-              ) : (
-                <Amount value={r.amount} kind={isFund ? 'in' : 'neutral'} showSign={isFund} />
-              )
-            }
+            trailing={<Amount value={r.amount} kind={isFund ? 'in' : 'neutral'} showSign={isFund} />}
+            onClick={() => setDlg(r)}
             divider
           />
         ))}
-        {edit && (
-          <ListRow
-            leading={
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                +
-              </div>
-            }
-            title={<span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-semibold)' }}>Add commitment</span>}
-            onClick={() => setDlg(true)}
-            divider
-          />
-        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-3)' }}>
           <span style={{ font: 'var(--font-label)', color: 'var(--text-muted)' }}>
             {isFund ? 'Total contributed' : 'Total / month'}
@@ -786,7 +795,14 @@ function RecurringPanel({ space }: { space: Space }) {
           <Amount value={sum} kind={isFund ? 'in' : 'neutral'} showSign={isFund} weight={'var(--fw-extra)' as CSSProperties['fontWeight']} />
         </div>
       </Card>
-      <RecurringDialog open={dlg} onClose={() => setDlg(false)} spaceId={space.id} cats={space.cats} />
+      <RecurringDialog
+        open={dlg !== null}
+        onClose={() => setDlg(null)}
+        spaceId={space.id}
+        cats={space.cats}
+        isFund={isFund}
+        editItem={dlg && dlg !== 'add' ? dlg : null}
+      />
     </div>
   );
 }
