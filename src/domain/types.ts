@@ -29,11 +29,12 @@ export interface Category {
   key: string;
   label: string;
   /**
-   * Optional explicit emoji glyph chosen by the user. Takes precedence over the
-   * key→glyph map in CategoryIcon; when absent, seeded categories fall back to
-   * their keyed glyph and unknown keys to the neutral fallback tile.
+   * Optional explicit icon name (from the design-system Icon set) chosen by the
+   * user. Takes precedence over the key→icon map in CategoryIcon; when absent,
+   * seeded categories fall back to their keyed icon and unknown keys to the
+   * neutral fallback tile.
    */
-  emoji?: string;
+  icon?: string;
 }
 
 export interface Space {
