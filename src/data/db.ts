@@ -6,6 +6,7 @@
 import Dexie from 'dexie';
 import type { Table } from 'dexie';
 import type { Snapshot } from '../domain/types';
+import { migrateLegacyCategory } from '../domain/legacy-emoji';
 
 interface CacheRow {
   id: string;
@@ -42,10 +43,22 @@ export async function saveCache(snapshot: Snapshot): Promise<void> {
 export async function loadCache(): Promise<Snapshot | null> {
   try {
     const row = await db.cache.get(CACHE_ID);
-    return row?.snapshot ?? null;
+    return row?.snapshot ? normalizeSnapshot(row.snapshot) : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Normalize a snapshot read from the boot cache: migrate any category persisted
+ * with the legacy `emoji` field to the current `icon` field, so a cached
+ * snapshot from before the emoji→icon migration reaches the store normalized.
+ */
+function normalizeSnapshot(snapshot: Snapshot): Snapshot {
+  return {
+    ...snapshot,
+    spaces: snapshot.spaces.map((s) => ({ ...s, cats: s.cats.map(migrateLegacyCategory) })),
+  };
 }
 
 /** Drop the cached snapshot (on sign-out). */

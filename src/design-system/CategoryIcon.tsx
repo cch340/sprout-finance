@@ -1,59 +1,61 @@
 import type { CSSProperties, HTMLAttributes } from 'react';
+import { Icon, PATHS, type IconName } from './Icon';
 
 const NEUTRAL = { bg: 'var(--surface-hover)', fg: 'var(--text-muted)' };
 
 interface CatDef {
-  emoji: string;
+  icon: IconName;
   bg: string;
-  fg?: string;
+  fg: string;
 }
 
 /**
  * Categories in Sprout are SCOPED to a space. This map is the union of all
- * category glyphs; which ones appear where is decided by the app data layer.
+ * category icons; which ones appear where is decided by the app data layer.
  */
 const CATEGORIES: Record<string, CatDef> = {
   // Everyday Expenses
-  grocery: { emoji: '🛒', bg: 'var(--cat-food-bg)' },
-  meals: { emoji: '🍜', bg: 'var(--cat-food-bg)' },
-  baby: { emoji: '👶', bg: 'var(--cat-baby-bg)' },
-  shopping: { emoji: '🛍️', bg: 'var(--cat-shopping-bg)' },
+  grocery: { icon: 'shopping-cart', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
+  meals: { icon: 'soup', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
+  baby: { icon: 'baby', bg: 'var(--cat-baby-bg)', fg: 'var(--cat-baby-fg)' },
+  shopping: { icon: 'shopping-bag', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
   // Housing (TreeO)
-  installment: { emoji: '🏠', bg: 'var(--cat-house-bg)' },
-  electric: { emoji: '⚡', bg: 'var(--cat-food-bg)' },
-  water: { emoji: '💧', bg: 'var(--cat-car-bg)' },
-  internet: { emoji: '📶', bg: 'var(--cat-car-bg)' },
-  maintenance: { emoji: '🔧', ...NEUTRAL },
-  furniture: { emoji: '🛋️', bg: 'var(--cat-shopping-bg)' },
-  appliance: { emoji: '🔌', bg: 'var(--cat-car-bg)' },
+  installment: { icon: 'home', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  electric: { icon: 'zap', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
+  water: { icon: 'droplet', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  internet: { icon: 'wifi', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  maintenance: { icon: 'wrench', ...NEUTRAL },
+  furniture: { icon: 'armchair', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
+  appliance: { icon: 'plug', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
   // Car
-  car: { emoji: '🚗', bg: 'var(--cat-car-bg)' },
-  roadtax: { emoji: '🛡️', bg: 'var(--cat-car-bg)' },
-  petrol: { emoji: '⛽', bg: 'var(--cat-car-bg)' },
+  car: { icon: 'car', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  roadtax: { icon: 'shield', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  petrol: { icon: 'fuel', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
   // Investment
-  investment: { emoji: '📈', bg: 'var(--cat-house-bg)' },
+  investment: { icon: 'trending-up', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
   // Personal (JC / CH)
-  income: { emoji: '💵', bg: 'var(--cat-house-bg)' },
-  subscriptions: { emoji: '🔄', bg: 'var(--cat-shopping-bg)' },
-  insurance: { emoji: '🛡️', bg: 'var(--cat-car-bg)' },
-  parent: { emoji: '👪', bg: 'var(--cat-baby-bg)' },
-  ptptn: { emoji: '🎓', bg: 'var(--cat-car-bg)' },
-  mobile: { emoji: '📱', bg: 'var(--cat-car-bg)' },
-  house: { emoji: '🏠', bg: 'var(--cat-house-bg)' },
-  joint: { emoji: '🌱', bg: 'var(--cat-house-bg)' },
+  income: { icon: 'banknote', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  subscriptions: { icon: 'repeat', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
+  insurance: { icon: 'shield', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  parent: { icon: 'users', bg: 'var(--cat-baby-bg)', fg: 'var(--cat-baby-fg)' },
+  ptptn: { icon: 'graduation-cap', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  mobile: { icon: 'smartphone', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  house: { icon: 'home', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  joint: { icon: 'sprout', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
   // Generic
-  bills: { emoji: '🧾', bg: 'var(--cat-bills-bg)' },
-  health: { emoji: '💊', bg: 'var(--cat-bills-bg)' },
-  savings: { emoji: '🌱', bg: 'var(--cat-house-bg)' },
-  money: { emoji: '💵', bg: 'var(--cat-house-bg)' },
-  other: { emoji: '📦', ...NEUTRAL },
+  bills: { icon: 'receipt', bg: 'var(--cat-bills-bg)', fg: 'var(--cat-bills-fg)' },
+  health: { icon: 'pill', bg: 'var(--cat-bills-bg)', fg: 'var(--cat-bills-fg)' },
+  savings: { icon: 'sprout', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  money: { icon: 'banknote', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  other: { icon: 'package', ...NEUTRAL },
 };
 
 export const categoryKeys = Object.keys(CATEGORIES);
 
 export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'style'> {
   category?: string;
-  emoji?: string;
+  /** Explicit icon name (domain stores it as a plain string); unknown names fall back to the keyed mapping. */
+  icon?: string;
   size?: number;
   radius?: string;
   className?: string;
@@ -61,12 +63,12 @@ export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>,
 }
 
 /**
- * CategoryIcon — the emoji-in-a-tinted-tile marker Sprout uses for
- * expense categories.
+ * CategoryIcon — the icon-in-a-tinted-tile marker Sprout uses for
+ * expense categories. An explicit `icon` prop overrides the keyed mapping.
  */
 export function CategoryIcon({
   category = 'money',
-  emoji,
+  icon,
   size = 40,
   radius = 'var(--radius-md)',
   className = '',
@@ -74,6 +76,7 @@ export function CategoryIcon({
   ...rest
 }: CategoryIconProps) {
   const def = CATEGORIES[category] || CATEGORIES.other;
+  const iconName = icon && icon in PATHS ? (icon as IconName) : def.icon;
   return (
     <span
       className={`sprout-cat ${className}`}
@@ -87,13 +90,13 @@ export function CategoryIcon({
         flexShrink: 0,
         borderRadius: radius,
         background: def.bg,
-        fontSize: Math.round(size * 0.5),
+        color: def.fg,
         lineHeight: 1,
         ...style,
       }}
       {...rest}
     >
-      {emoji || def.emoji}
+      <Icon name={iconName} size={Math.round(size * 0.5)} />
     </span>
   );
 }

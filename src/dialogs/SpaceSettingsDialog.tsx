@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
-  CategoryEmojiPicker,
   CategoryIcon,
+  CategoryIconPicker,
   Dialog,
   Icon,
   IconButton,
@@ -12,6 +12,7 @@ import {
   SegmentedControl,
   Tag,
 } from '../design-system';
+import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import { OTHER_CATEGORY } from '../domain/selectors';
 import type { Category, FieldDef, Space } from '../domain/types';
@@ -35,7 +36,7 @@ function FieldRow({
   onChange: (next: FieldDef) => void;
 }) {
   const [np, setNp] = useState('');
-  // Two-step delete: the ✕ arms an inline confirm rather than removing at once,
+  // Two-step delete: the X arms an inline confirm rather than removing at once,
   // since removing a field also wipes its saved values from every entry.
   const [confirming, setConfirming] = useState(false);
   // Inline rename — commits on blur/Enter. Only the display label changes;
@@ -181,7 +182,7 @@ export function SpaceSettingsDialog() {
   const [section, setSection] = useState<'general' | 'categories' | 'fields'>('general');
   const [name, setName] = useState('');
   const [newCat, setNewCat] = useState('');
-  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
+  const [newIcon, setNewIcon] = useState<IconName | undefined>(undefined);
   const [newField, setNewField] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldDef['type']>('text');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -192,7 +193,7 @@ export function SpaceSettingsDialog() {
     if (space) setName(space.name);
     setSection('general');
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
     setNewField('');
     setNewFieldType('text');
     setConfirmDelete(false);
@@ -215,14 +216,14 @@ export function SpaceSettingsDialog() {
     const key = slug(label) || `cat-${cats.length}`;
     // 'other' is the reserved virtual fallback — it can't be created explicitly.
     if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
-      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+      const c: Category = newIcon ? { key, label, icon: newIcon } : { key, label };
       const next: Category[] = [...cats, c];
       void updateSpace(space.id, { cats: next });
     }
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
   };
-  // Two-step delete: ✕ arms confirmation; confirming moves the category's
+  // Two-step delete: X arms confirmation; confirming moves the category's
   // entries to "Other" (see store deleteCategory).
   const confirmRemoveCat = () => {
     if (!confirmCat) return;
@@ -350,7 +351,7 @@ export function SpaceSettingsDialog() {
                   <Tag key={c.key} onRemove={() => setConfirmCat(c.key)}>
                     <CategoryIcon
                       category={c.key}
-                      emoji={c.emoji}
+                      icon={c.icon}
                       size={18}
                       radius="var(--radius-xs)"
                       style={{ marginRight: 4 }}
@@ -400,7 +401,7 @@ export function SpaceSettingsDialog() {
                 Add
               </Button>
             </div>
-            <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} />
+            <CategoryIconPicker value={newIcon} onChange={setNewIcon} />
           </div>
         )}
 

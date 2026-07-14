@@ -11,6 +11,7 @@ import { SETTINGS_ID } from '../domain/types';
 import type {
   Household, Person, RecurringItem, Settings, Snapshot, Space, Tx,
 } from '../domain/types';
+import { migrateLegacyCategory } from '../domain/legacy-emoji';
 import type { MirrorAction } from '../domain/entry-links';
 
 // ---- current household context -------------------------------------------
@@ -62,7 +63,9 @@ interface SettingsRow {
 function toSpace(r: SpaceRow): Space {
   return {
     id: r.id, name: r.name, short: r.short ?? undefined, sub: r.sub ?? undefined,
-    group: r.grp, icon: r.icon, kind: r.kind, cats: r.cats ?? [], fields: r.fields ?? [],
+    group: r.grp, icon: r.icon, kind: r.kind,
+    // Normalize any category persisted with the legacy `emoji` field to `icon`.
+    cats: (r.cats ?? []).map(migrateLegacyCategory), fields: r.fields ?? [],
     budget: r.budget ?? undefined, baseBalance: r.base_balance ?? undefined,
     value: r.value ?? undefined, sortOrder: r.sort_order,
   };

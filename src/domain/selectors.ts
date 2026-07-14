@@ -101,8 +101,8 @@ export interface CategorySpend {
   cat: string;
   label: string;
   value: number;
-  /** Explicit custom emoji if the category defines one; else undefined. */
-  emoji?: string;
+  /** Explicit custom icon if the category defines one; else undefined. */
+  icon?: string;
 }
 
 /** Top spending categories across shared spend spaces (default top 5). */
@@ -121,7 +121,7 @@ export function topCategories(
       if (cur) cur.value += t.amount;
       else {
         const d = defOf(t.cat);
-        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, icon: d?.icon });
       }
     }
   }
@@ -272,7 +272,7 @@ export function topCategoriesRange(
       if (cur) cur.value += t.amount;
       else {
         const d = defOf(t.cat);
-        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, icon: d?.icon });
       }
     }
   }
@@ -285,12 +285,12 @@ export function secondaryFields(space: Space) {
 }
 
 /**
- * Resolve a category's explicit custom emoji (if the user picked one) for a tx
+ * Resolve a category's explicit custom icon (if the user picked one) for a tx
  * in a given space. Returns undefined so CategoryIcon falls back to its keyed
- * glyph / neutral tile.
+ * icon / neutral tile.
  */
-export function catEmojiOf(spaces: Space[], spaceId: string, catKey: string): string | undefined {
-  return spaces.find((s) => s.id === spaceId)?.cats.find((c) => c.key === catKey)?.emoji || undefined;
+export function catIconOf(spaces: Space[], spaceId: string, catKey: string): string | undefined {
+  return spaces.find((s) => s.id === spaceId)?.cats.find((c) => c.key === catKey)?.icon || undefined;
 }
 
 /** Number of ledger entries for a space (optionally scoped to a month). */

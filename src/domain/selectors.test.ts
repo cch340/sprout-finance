@@ -7,7 +7,8 @@ import {
   spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
   totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
-import type { Space, Tx } from './types';
+import { migrateLegacyCategory } from './legacy-emoji';
+import type { Category, Space, Tx } from './types';
 
 // Pin the reference month so the demo maps deterministically.
 const REF = new Date(2026, 6, 12); // July 2026 (month index 6)
@@ -57,16 +58,42 @@ describe('roll-ups', () => {
     }
   });
 
-  it('topCategories surfaces a category custom emoji when set', () => {
+  it('topCategories surfaces a category custom icon when set', () => {
     const spaces = snap.spaces.map((s) =>
       s.id === 'expenses'
-        ? { ...s, cats: s.cats.map((c) => (c.key === 'grocery' ? { ...c, emoji: '☕' } : c)) }
+        ? { ...s, cats: s.cats.map((c) => (c.key === 'grocery' ? { ...c, icon: 'coffee' } : c)) }
         : s,
     );
     const top = topCategories(spaces, snap.txs, MONTH);
-    expect(top.find((t) => t.cat === 'grocery')?.emoji).toBe('☕');
-    // categories without a custom emoji stay undefined (keyed-glyph fallback)
-    expect(top.find((t) => t.cat === 'installment')?.emoji).toBeUndefined();
+    expect(top.find((t) => t.cat === 'grocery')?.icon).toBe('coffee');
+    // categories without a custom icon stay undefined (keyed-icon fallback)
+    expect(top.find((t) => t.cat === 'installment')?.icon).toBeUndefined();
+  });
+});
+
+describe('migrateLegacyCategory', () => {
+  it('converts a mapped legacy emoji to its icon name', () => {
+    const c: Category & { emoji?: string } = { key: 'coffee', label: 'Coffee', emoji: '☕' };
+    const out = migrateLegacyCategory(c);
+    expect(out.icon).toBe('coffee');
+    expect('emoji' in out).toBe(false);
+  });
+
+  it('matches emoji regardless of the U+FE0F variation selector', () => {
+    expect(migrateLegacyCategory({ key: 'd', label: 'Dining', emoji: '🍽️' }).icon).toBe('utensils');
+    expect(migrateLegacyCategory({ key: 'd', label: 'Dining', emoji: '🍽' }).icon).toBe('utensils');
+  });
+
+  it('drops an unmapped legacy emoji, leaving icon undefined', () => {
+    const out = migrateLegacyCategory({ key: 'x', label: 'X', emoji: '🦄' });
+    expect(out.icon).toBeUndefined();
+    expect('emoji' in out).toBe(false);
+  });
+
+  it('passes an existing icon through and never keeps an emoji key', () => {
+    const out = migrateLegacyCategory({ key: 'g', label: 'Groceries', icon: 'shopping-cart', emoji: '☕' });
+    expect(out.icon).toBe('shopping-cart'); // explicit icon wins over legacy emoji
+    expect('emoji' in out).toBe(false);
   });
 });
 
