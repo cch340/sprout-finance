@@ -1,53 +1,45 @@
 import type { CSSProperties, HTMLAttributes } from 'react';
 import { Icon, PATHS, type IconName } from './Icon';
 
-const NEUTRAL = { bg: 'var(--surface-hover)', fg: 'var(--text-muted)' };
-
-interface CatDef {
-  icon: IconName;
-  bg: string;
-  fg: string;
-}
-
 /**
  * Categories in Sprout are SCOPED to a space. This map is the union of all
  * category icons; which ones appear where is decided by the app data layer.
  */
-const CATEGORIES: Record<string, CatDef> = {
+const CATEGORIES: Record<string, IconName> = {
   // Everyday Expenses
-  grocery: { icon: 'shopping-cart', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
-  meals: { icon: 'soup', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
-  baby: { icon: 'baby', bg: 'var(--cat-baby-bg)', fg: 'var(--cat-baby-fg)' },
-  shopping: { icon: 'shopping-bag', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
+  grocery: 'shopping-cart',
+  meals: 'soup',
+  baby: 'baby',
+  shopping: 'shopping-bag',
   // Housing (TreeO)
-  installment: { icon: 'home', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
-  electric: { icon: 'zap', bg: 'var(--cat-food-bg)', fg: 'var(--cat-food-fg)' },
-  water: { icon: 'droplet', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  internet: { icon: 'wifi', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  maintenance: { icon: 'wrench', ...NEUTRAL },
-  furniture: { icon: 'armchair', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
-  appliance: { icon: 'plug', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  installment: 'home',
+  electric: 'zap',
+  water: 'droplet',
+  internet: 'wifi',
+  maintenance: 'wrench',
+  furniture: 'armchair',
+  appliance: 'plug',
   // Car
-  car: { icon: 'car', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  roadtax: { icon: 'shield', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  petrol: { icon: 'fuel', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
+  car: 'car',
+  roadtax: 'shield',
+  petrol: 'fuel',
   // Investment
-  investment: { icon: 'trending-up', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  investment: 'trending-up',
   // Personal (JC / CH)
-  income: { icon: 'banknote', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
-  subscriptions: { icon: 'repeat', bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
-  insurance: { icon: 'shield', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  parent: { icon: 'users', bg: 'var(--cat-baby-bg)', fg: 'var(--cat-baby-fg)' },
-  ptptn: { icon: 'graduation-cap', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  mobile: { icon: 'smartphone', bg: 'var(--cat-car-bg)', fg: 'var(--cat-car-fg)' },
-  house: { icon: 'home', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
-  joint: { icon: 'sprout', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
+  income: 'banknote',
+  subscriptions: 'repeat',
+  insurance: 'shield',
+  parent: 'users',
+  ptptn: 'graduation-cap',
+  mobile: 'smartphone',
+  house: 'home',
+  joint: 'sprout',
   // Generic
-  bills: { icon: 'receipt', bg: 'var(--cat-bills-bg)', fg: 'var(--cat-bills-fg)' },
-  health: { icon: 'pill', bg: 'var(--cat-bills-bg)', fg: 'var(--cat-bills-fg)' },
-  savings: { icon: 'sprout', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
-  money: { icon: 'banknote', bg: 'var(--cat-house-bg)', fg: 'var(--cat-house-fg)' },
-  other: { icon: 'package', ...NEUTRAL },
+  bills: 'receipt',
+  health: 'pill',
+  savings: 'sprout',
+  money: 'banknote',
+  other: 'package',
 };
 
 export const categoryKeys = Object.keys(CATEGORIES);
@@ -63,8 +55,10 @@ export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>,
 }
 
 /**
- * CategoryIcon — the icon-in-a-tinted-tile marker Sprout uses for
- * expense categories. An explicit `icon` prop overrides the keyed mapping.
+ * CategoryIcon — the icon-in-a-neutral-tile marker Sprout uses for expense
+ * categories. The glyph carries the meaning; the tile uses the theme's
+ * neutral surface/text colors so seeded and custom categories look alike.
+ * An explicit `icon` prop overrides the keyed mapping.
  */
 export function CategoryIcon({
   category = 'money',
@@ -75,8 +69,8 @@ export function CategoryIcon({
   style = {},
   ...rest
 }: CategoryIconProps) {
-  const def = CATEGORIES[category] || CATEGORIES.other;
-  const iconName = icon && icon in PATHS ? (icon as IconName) : def.icon;
+  const iconName =
+    icon && icon in PATHS ? (icon as IconName) : CATEGORIES[category] || CATEGORIES.other;
   return (
     <span
       className={`sprout-cat ${className}`}
@@ -89,8 +83,8 @@ export function CategoryIcon({
         height: size,
         flexShrink: 0,
         borderRadius: radius,
-        background: def.bg,
-        color: def.fg,
+        background: 'var(--surface-hover)',
+        color: 'var(--text-muted)',
         lineHeight: 1,
         ...style,
       }}
