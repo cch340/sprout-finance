@@ -121,7 +121,10 @@ Selectors in `domain/selectors.ts` are pure `(state, args) => value`; mirror dat
 - **Realtime partner sync**: one `supabase.channel` per session subscribes to `postgres_changes`
   on `txs`, `spaces`, `recurring`, `settings`, `people` filtered `household_id=eq.<hid>`. Each
   event schedules a 200ms-debounced refetch of just that table, which is spliced into the
-  snapshot (idempotent — no skip-own-echo needed).
+  snapshot (idempotent — no skip-own-echo needed). Because a backgrounded iOS PWA suspends the
+  WebSocket and missed events are not replayed on resume, `resync()` (wired to `visibilitychange`
+  when the doc becomes visible and to the `online` event) does a throttled full-snapshot refetch
+  and realtime resubscribe to recover any changes that arrived while the socket was dead.
 - App boot routing: no session → Login; session + no household → Onboarding; else the app.
 - Toast state is transient in the store.
 

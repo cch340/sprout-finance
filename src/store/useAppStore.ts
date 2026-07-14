@@ -25,6 +25,12 @@ const OFFLINE_MSG = "You're offline — change not saved";
 let unsubscribeRealtime: (() => void) | null = null;
 const refetchTimers: Partial<Record<RealtimeTable, ReturnType<typeof setTimeout>>> = {};
 
+// Foreground/online resync throttle (module-level; guards against duplicate
+// visibilitychange + online firings and rapid re-foregrounding).
+let resyncInFlight = false;
+let lastResyncAt = 0;
+const RESYNC_THROTTLE_MS = 2000;
+
 export interface Toast {
   msg: string;
   sub?: string;
@@ -105,6 +111,12 @@ export interface AppState {
   joinHousehold: (code: string) => Promise<void>;
   /** Load the active household's snapshot, cache it, and start realtime sync. */
   loadHousehold: () => Promise<void>;
+  /**
+   * Refetch a fresh snapshot and resubscribe realtime. Triggered when the app
+   * returns to foreground or the network comes back, since a suspended socket
+   * (backgrounded iOS PWA) won't replay missed partner events. Throttled + guarded.
+   */
+  resync: () => Promise<void>;
   resetAll: () => Promise<void>;
 
   // mutations
@@ -218,6 +230,30 @@ export const useAppStore = create<AppState>((set, get) => ({
       month: isoMonth(new Date()),
     });
     startRealtime();
+  },
+
+  async resync() {
+    const s = get();
+    if (!(s.authed && s.hasHousehold) || s.status !== 'ready') return;
+    // Concurrency + throttle: skip if one is in flight or one finished < 2s ago.
+    if (resyncInFlight) return;
+    if (Date.now() - lastResyncAt < RESYNC_THROTTLE_MS) return;
+    resyncInFlight = true;
+    set({ syncing: true });
+    try {
+      const snapshot = await repo.loadSnapshot();
+      await saveCache(snapshot);
+      set({ snapshot, syncing: false, offline: false });
+      // A suspended socket may be dead — teardown + resubscribe.
+      startRealtime();
+      lastResyncAt = Date.now();
+    } catch (err) {
+      // Transient foreground/online hiccup — don't flip to offline read-only.
+      console.error('[sprout] resync failed', err);
+      set({ syncing: false });
+    } finally {
+      resyncInFlight = false;
+    }
   },
 
   async refreshAfterAuth() {
@@ -576,4 +612,19 @@ function teardownRealtime(): void {
 // production; carries no secrets.
 if (typeof window !== 'undefined') {
   (window as unknown as { useAppStore?: typeof useAppStore }).useAppStore = useAppStore;
+}
+
+// Resync triggers: iOS suspends the realtime socket when the PWA is backgrounded
+// and missed events are not replayed on resume, so refetch a fresh snapshot (and
+// resubscribe realtime) when the app returns to foreground or the network comes
+// back. resync()'s 2s throttle absorbs both firing together.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') useAppStore.getState().resync();
+  });
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    useAppStore.getState().resync();
+  });
 }
