@@ -56,9 +56,24 @@ function statusTone(s?: Tx['status']): BadgeTone {
 
 function statusMeta(t: Tx) {
   if (!t.status) return shortDate(t.date);
+  // A 'due' bill folds the date into its badge ("Due 3 Jun"). A 'paid' bill has
+  // no date in its label, so pair the badge with the date underneath — otherwise
+  // paid entries (common in shared spaces) show no date without opening detail.
+  if (t.status === 'paid') {
+    return (
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+        <Badge tone={statusTone(t.status)} dot>
+          Paid
+        </Badge>
+        <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+          {shortDate(t.date)}
+        </span>
+      </span>
+    );
+  }
   return (
     <Badge tone={statusTone(t.status)} dot>
-      {t.status === 'due' ? `Due ${shortDate(t.date)}` : 'Paid'}
+      {`Due ${shortDate(t.date)}`}
     </Badge>
   );
 }
