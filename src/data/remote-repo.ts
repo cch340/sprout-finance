@@ -52,6 +52,7 @@ interface TxRow {
 }
 interface RecurringRow {
   household_id: string; id: string; space_id: string; label: string; cat: string; amount: number;
+  remark: string | null;
 }
 interface SettingsRow {
   household_id: string; theme: Settings['theme']; bill_reminders: boolean;
@@ -75,7 +76,7 @@ function toTx(r: TxRow): Tx {
   };
 }
 function toRecurring(r: RecurringRow): RecurringItem {
-  return { id: r.id, spaceId: r.space_id, label: r.label, cat: r.cat, amount: r.amount };
+  return { id: r.id, spaceId: r.space_id, label: r.label, cat: r.cat, amount: r.amount, remark: r.remark ?? undefined };
 }
 
 // ---- mappers: domain → row (full insert) ---------------------------------
@@ -96,7 +97,7 @@ function txRow(t: Tx): TxRow {
   };
 }
 function recurringRow(r: RecurringItem): RecurringRow {
-  return { household_id: hid(), id: r.id, space_id: r.spaceId, label: r.label, cat: r.cat, amount: r.amount };
+  return { household_id: hid(), id: r.id, space_id: r.spaceId, label: r.label, cat: r.cat, amount: r.amount, remark: r.remark ?? null };
 }
 
 // ---- mappers: partial patch → row columns --------------------------------
@@ -295,6 +296,7 @@ export async function updateRecurring(id: string, patch: Partial<RecurringItem>)
   if ('label' in patch) o.label = patch.label;
   if ('cat' in patch) o.cat = patch.cat;
   if ('amount' in patch) o.amount = patch.amount;
+  if ('remark' in patch) o.remark = patch.remark ?? null;
   must(await supabase.from('recurring').update(o).eq('household_id', hid()).eq('id', id));
 }
 export async function deleteRecurring(id: string): Promise<void> {

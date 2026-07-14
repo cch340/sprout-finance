@@ -146,16 +146,19 @@ function RecurringDialog({
   const addRecurring = useAppStore((s) => s.addRecurring);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
+  const [remark, setRemark] = useState('');
   const [cat, setCat] = useState(cats[0]?.key ?? 'money');
   useEffect(() => {
     if (open) {
       setLabel('');
       setAmount('');
+      setRemark('');
       setCat(cats[0]?.key ?? 'money');
     }
   }, [open, cats]);
   const add = () => {
-    void addRecurring({ spaceId, label, cat, amount: parseFloat(amount) || 0 });
+    const r = remark.trim();
+    void addRecurring({ spaceId, label, cat, amount: parseFloat(amount) || 0, ...(r ? { remark: r } : {}) });
     onClose();
   };
   return (
@@ -190,6 +193,12 @@ function RecurringDialog({
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+        />
+        <Input
+          label="Remark (optional)"
+          placeholder="e.g. JC 1,045 · CH 1,045"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
         />
         {cats.length > 0 && (
           <Select
@@ -747,6 +756,7 @@ function RecurringPanel({ space }: { space: Space }) {
             key={r.id}
             leading={<CategoryIcon category={r.cat} emoji={space.cats.find((c) => c.key === r.cat)?.emoji} />}
             title={r.label}
+            subtitle={r.remark || undefined}
             trailing={
               edit ? (
                 <IconButton icon="x" label="Remove" variant="ghost" size="sm" onClick={() => void deleteRecurring(r.id)} />
