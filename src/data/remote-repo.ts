@@ -233,6 +233,16 @@ export async function deleteTxs(ids: string[]): Promise<void> {
   must(await supabase.from('txs').delete().eq('household_id', hid()).in('id', ids));
 }
 /**
+ * Rewrite the `field_values` map on a batch of entries — used when a custom
+ * field is deleted, to strip its now-orphaned value from every entry that
+ * carried one. Each entry needs its own value, so these go as parallel updates.
+ */
+export async function updateTxsFieldValues(
+  updates: { id: string; fieldValues: Record<string, string> }[],
+): Promise<void> {
+  await Promise.all(updates.map((u) => updateTx(u.id, { fieldValues: u.fieldValues })));
+}
+/**
  * Apply an entry edit: patch the origin tx and reconcile its fund mirror
  * (create / update / delete / none). Mixed ops → sequential calls.
  */

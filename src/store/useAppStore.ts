@@ -131,6 +131,12 @@ export interface AppState {
   carryForward: (drafts: Omit<Tx, 'id'>[]) => Promise<number>;
   addSpace: (space: Omit<Space, 'sortOrder'> & { sortOrder?: number }) => Promise<Space>;
   updateSpace: (id: string, patch: Partial<Space>) => Promise<void>;
+  /**
+   * Remove a custom field from a space and strip its now-orphaned value from
+   * every entry in that space, so deleted-field data doesn't linger in the DB
+   * (or resurface if a same-keyed field is later recreated).
+   */
+  deleteField: (spaceId: string, fieldKey: string) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
   addRecurring: (item: Omit<RecurringItem, 'id'>) => Promise<RecurringItem>;
   updateRecurring: (id: string, patch: Partial<RecurringItem>) => Promise<void>;
@@ -438,6 +444,36 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { snapshot } = get();
     commitSnapshot(get, set, {
       spaces: snapshot.spaces.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+    });
+  },
+
+  async deleteField(spaceId, fieldKey) {
+    const { snapshot } = get();
+    const space = snapshot.spaces.find((s) => s.id === spaceId);
+    if (!space) return;
+    const nextFields = space.fields.filter((f) => f.key !== fieldKey);
+    // Entries in this space that still carry a value under the removed key.
+    const stripped = snapshot.txs
+      .filter((t) => t.spaceId === spaceId && fieldKey in t.fieldValues)
+      .map((t) => {
+        const fieldValues = { ...t.fieldValues };
+        delete fieldValues[fieldKey];
+        return { id: t.id, fieldValues };
+      });
+    // Drop the field definition first, then clean up the orphaned values. If the
+    // value cleanup fails, the worst case is the pre-existing behaviour (values
+    // linger) rather than a field that renders empty cells.
+    const ok = await guardWrite(get, async () => {
+      await repo.updateSpace(spaceId, { fields: nextFields });
+      if (stripped.length > 0) await repo.updateTxsFieldValues(stripped);
+    });
+    if (!ok) return;
+    const strippedById = new Map(stripped.map((s) => [s.id, s.fieldValues]));
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) => (s.id === spaceId ? { ...s, fields: nextFields } : s)),
+      txs: snapshot.txs.map((t) =>
+        strippedById.has(t.id) ? { ...t, fieldValues: strippedById.get(t.id)! } : t,
+      ),
     });
   },
 
