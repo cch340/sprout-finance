@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -184,6 +184,15 @@ function DesktopShell() {
     .filter((s) => s.kind === 'personal')
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Same grouping as the Spaces screen: sub-labels only when there is more
+  // than one kind of shared space to tell apart.
+  const sharedGroups = [
+    { label: 'Spending', list: shared.filter((s) => s.kind !== 'fund' && s.kind !== 'invest') },
+    { label: 'Funds & savings', list: shared.filter((s) => s.kind === 'fund') },
+    { label: 'Investments', list: shared.filter((s) => s.kind === 'invest') },
+  ].filter((g) => g.list.length > 0);
+  const showSubLabels = sharedGroups.length > 1;
+
   const personMatch = personal.find((p) => pathname === `/personal/${p.id}`);
   const personName = personMatch?.name;
   const spaceMatch = pathname.startsWith('/spaces/')
@@ -236,15 +245,20 @@ function DesktopShell() {
         <div>
           <div className="navlabel">Shared</div>
           <nav className="nav">
-            {shared.map((s) => (
-              <NavItem
-                key={s.id}
-                icon={s.icon as IconName}
-                label={s.name}
-                to={`/spaces/${s.id}`}
-                active={pathname === `/spaces/${s.id}`}
-                sub={s.sub}
-              />
+            {sharedGroups.map((g) => (
+              <Fragment key={g.label}>
+                {showSubLabels && <div className="navsublabel">{g.label}</div>}
+                {g.list.map((s) => (
+                  <NavItem
+                    key={s.id}
+                    icon={s.icon as IconName}
+                    label={s.name}
+                    to={`/spaces/${s.id}`}
+                    active={pathname === `/spaces/${s.id}`}
+                    sub={s.sub}
+                  />
+                ))}
+              </Fragment>
             ))}
             <NavItem icon="plus" label="New space" onClick={openNewSpace} accent />
           </nav>

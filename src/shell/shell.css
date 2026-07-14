@@ -151,6 +151,16 @@
   flex-direction: column;
   gap: 2px;
 }
+.navsublabel {
+  font: var(--font-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-subtle);
+  padding: 0 12px;
+  margin: 8px 0 2px;
+}
+.navsublabel:first-child {
+  margin-top: 0;
+}
 .nav-item {
   display: flex;
   align-items: center;
