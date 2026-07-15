@@ -240,35 +240,63 @@ function RecurringDialog({
 }
 
 // ---- hero ----------------------------------------------------------------
-function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
+function Hero({
+  space, desktop, monthSel, setMonthSel, monthOptions,
+}: {
+  space: Space;
+  desktop: boolean;
+  monthSel: string;
+  setMonthSel: (v: string) => void;
+  monthOptions: { value: string; label: string }[];
+}) {
   const snapshot = useAppStore((s) => s.snapshot);
-  const month = useAppStore((s) => s.month);
   const [budgetDlg, setBudgetDlg] = useState(false);
 
   const isSpend = space.kind === 'spend';
   const isPersonal = space.kind === 'personal';
+  // Spend/personal heroes are month-scoped and get the month filter; fund/invest
+  // heroes show a cumulative balance/value the month filter can't narrow.
+  const monthScoped = isSpend || isPersonal;
+  const allTime = monthSel === 'all';
+  // Undefined month → the selector totals across every month ("All time").
+  const scope = allTime ? undefined : monthSel;
   const label =
     space.kind === 'fund'
       ? 'Shared balance'
       : space.kind === 'invest'
         ? `${space.sub ? space.sub + ' · ' : ''}portfolio value`
         : isPersonal
-          ? 'Left this month'
-          : 'Spent this month';
+          ? allTime ? 'Net · all time' : 'Left this month'
+          : allTime ? 'Spent · all time' : 'Spent this month';
   const value =
     space.kind === 'fund'
       ? fundBalance(space, snapshot.txs)
       : space.kind === 'invest'
         ? space.value ?? 0
         : isPersonal
-          ? leftThisMonth(space.id, snapshot.txs, month)
-          : spentOf(space, snapshot.txs, month);
+          ? leftThisMonth(space.id, snapshot.txs, scope)
+          : spentOf(space, snapshot.txs, scope);
   const budget = space.budget ?? 0;
 
   // Desktop hero is always sage; mobile spend hero is a white card.
   const sageCard = desktop || !isSpend;
 
-  const budgetRow = isSpend && (
+  // Month filter chip on the hero (spend/personal only). A monthly budget can't
+  // meaningfully compare against an all-months total, so the budget row is
+  // hidden while "All time" is selected.
+  const monthPicker = monthScoped && (
+    <div style={{ maxWidth: 150 }}>
+      <Select
+        size="sm"
+        aria-label="Filter by month"
+        value={monthSel}
+        onChange={(e) => setMonthSel(e.target.value)}
+        options={monthOptions}
+      />
+    </div>
+  );
+
+  const budgetRow = isSpend && !allTime && (
     <div style={{ marginTop: 16 }}>
       {budget > 0 ? (
         desktop ? (
@@ -351,9 +379,12 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
         border: sageCard ? 'none' : undefined,
       }}
     >
-      <span style={{ font: 'var(--font-label)', color: sageCard ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)' }}>
-        {label}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ font: 'var(--font-label)', color: sageCard ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)' }}>
+          {label}
+        </span>
+        {monthPicker}
+      </div>
       <Amount
         value={value}
         size="hero"
@@ -362,10 +393,10 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
       {isPersonal && (
         <div style={{ display: 'flex', gap: 18, marginTop: 12 }}>
           <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
-            Income RM {incomeOf(space.id, snapshot.txs, month).toLocaleString()}
+            Income RM {incomeOf(space.id, snapshot.txs, scope).toLocaleString()}
           </span>
           <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
-            Spent RM {spentOfPersonal(space.id, snapshot.txs, month).toLocaleString()}
+            Spent RM {spentOfPersonal(space.id, snapshot.txs, scope).toLocaleString()}
           </span>
         </div>
       )}
@@ -382,7 +413,15 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
 }
 
 // ---- activity ------------------------------------------------------------
-function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
+function ActivityPanel({
+  space, desktop, monthSel, setMonthSel, monthOptions,
+}: {
+  space: Space;
+  desktop: boolean;
+  monthSel: string;
+  setMonthSel: (v: string) => void;
+  monthOptions: { value: string; label: string }[];
+}) {
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
@@ -390,7 +429,6 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   // Multi-select category filter: an empty set means "All".
   const [catSel, setCatSel] = useState<Set<string>>(new Set());
-  const [monthSel, setMonthSel] = useState('all');
   // Custom select-field filters: field.key → selected value ('all'/absent = no filter).
   const [fieldSel, setFieldSel] = useState<Record<string, string>>({});
   const [edit, setEdit] = useState(false);
@@ -402,6 +440,11 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Carry-forward dialog: null closed; otherwise the source/target months to prefill.
   const [carry, setCarry] = useState<{ source?: string; target?: string } | null>(null);
 
+  // Spend/personal spaces surface the month filter on the hero card; here it
+  // would duplicate, so this panel only shows its own month Select for
+  // fund/invest spaces (whose hero isn't month-scoped).
+  const monthOnHero = space.kind === 'spend' || space.kind === 'personal';
+
   const cats = space.cats;
   const toggleCat = (key: string) =>
     setCatSel((prev) => {
@@ -412,20 +455,10 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     });
   useEffect(() => {
     setCatSel(new Set());
-    setMonthSel('all');
     setFieldSel({});
     setEdit(false);
     setConfirmCat(null);
   }, [space.id]);
-
-  // Months that actually have entries in this space (newest first), for the
-  // month filter. Derived purely from tx dates — no store persistence.
-  const monthOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
-    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-    return [{ value: 'all', label: 'All months' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
-  }, [snapshot.txs, space.id]);
 
   // Data-driven filters for select-type custom fields (mirrors monthOptions).
   // For each select field, collect the distinct non-empty values present in this
@@ -644,9 +677,9 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           </div>
         </Card>
       )}
-      {(monthOptions.length > 1 || fieldFilters.length > 0 || (carryable.length > 0 && !showCarryBanner)) && (
+      {((!monthOnHero && monthOptions.length > 1) || fieldFilters.length > 0 || (carryable.length > 0 && !showCarryBanner)) && (
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-3)', justifyContent: 'space-between' }}>
-          {monthOptions.length > 1 ? (
+          {!monthOnHero && monthOptions.length > 1 ? (
             <div style={{ maxWidth: 200, flex: 1 }}>
               <Select
                 size="sm"
@@ -815,8 +848,27 @@ export function SpaceDetail() {
   const snapshot = useAppStore((s) => s.snapshot);
   const openSpaceSettings = useAppStore((s) => s.openSpaceSettings);
   const space = snapshot.spaces.find((s) => s.id === id);
+  const month = useAppStore((s) => s.month);
   const [tab, setTab] = useState<'activity' | 'recurring'>('activity');
   useEffect(() => setTab('activity'), [id]);
+
+  // Unified month filter shared by the hero card and the activity ledger. Options
+  // are the months that actually have entries (newest first) plus "All time";
+  // spend/personal spaces also always offer the current month so the default is
+  // selectable even before any entry lands there.
+  const isMonthScoped = space?.kind === 'spend' || space?.kind === 'personal';
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of snapshot.txs) if (t.spaceId === space?.id) set.add(t.date.slice(0, 7));
+    if (isMonthScoped) set.add(month);
+    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    return [...keys.map((k) => ({ value: k, label: monthLabel(k) })), { value: 'all', label: 'All time' }];
+  }, [snapshot.txs, space?.id, isMonthScoped, month]);
+  // Spend/personal default to the current month; fund/invest to the full history.
+  const [monthSel, setMonthSel] = useState(isMonthScoped ? month : 'all');
+  useEffect(() => {
+    setMonthSel(isMonthScoped ? month : 'all');
+  }, [id, isMonthScoped, month]);
 
   if (!space) {
     return (
@@ -846,13 +898,13 @@ export function SpaceDetail() {
             ]}
           />
           {tab === 'activity' ? (
-            <ActivityPanel space={space} desktop={isDesktop} />
+            <ActivityPanel space={space} desktop={isDesktop} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
           ) : (
             <RecurringPanel space={space} />
           )}
         </>
       ) : (
-        <ActivityPanel space={space} desktop={isDesktop} />
+        <ActivityPanel space={space} desktop={isDesktop} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
       )}
     </>
   );
@@ -861,7 +913,7 @@ export function SpaceDetail() {
     return (
       <>
         <div className="row-2">
-          <Hero space={space} desktop />
+          <Hero space={space} desktop monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
         </div>
         {panels}
       </>
@@ -881,7 +933,7 @@ export function SpaceDetail() {
         <span style={{ font: 'var(--font-label)', color: 'var(--text-muted)', flex: 1 }}>{space.name}</span>
         <IconButton icon="settings" label="Space settings" variant="ghost" onClick={() => openSpaceSettings(space.id)} />
       </div>
-      <Hero space={space} desktop={false} />
+      <Hero space={space} desktop={false} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
       {panels}
     </div>
   );
