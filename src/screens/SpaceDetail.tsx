@@ -56,10 +56,11 @@ function statusTone(s?: Tx['status']): BadgeTone {
 }
 
 function statusMeta(t: Tx) {
-  if (!t.status) return shortDate(t.date);
-  // A 'due' bill folds the date into its badge ("Due 3 Jun"). A 'paid' bill has
-  // no date in its label, so pair the badge with the date underneath — otherwise
-  // paid entries (common in shared spaces) show no date without opening detail.
+  // Activity rows show the year — a space's ledger can span multiple years.
+  if (!t.status) return shortDate(t.date, undefined, true);
+  // A 'due' bill folds the date into its badge ("Due 3 Jun 2026"). A 'paid' bill
+  // has no date in its label, so pair the badge with the date underneath —
+  // otherwise paid entries (common in shared spaces) show no date without opening detail.
   if (t.status === 'paid') {
     return (
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
@@ -67,14 +68,14 @@ function statusMeta(t: Tx) {
           Paid
         </Badge>
         <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
-          {shortDate(t.date)}
+          {shortDate(t.date, undefined, true)}
         </span>
       </span>
     );
   }
   return (
     <Badge tone={statusTone(t.status)} dot>
-      {`Due ${shortDate(t.date)}`}
+      {`Due ${shortDate(t.date, undefined, true)}`}
     </Badge>
   );
 }
@@ -240,16 +241,9 @@ function RecurringDialog({
 }
 
 // ---- hero ----------------------------------------------------------------
-function Hero({
-  space, desktop, monthSel, setMonthSel, monthOptions,
-}: {
-  space: Space;
-  desktop: boolean;
-  monthSel: string;
-  setMonthSel: (v: string) => void;
-  monthOptions: { value: string; label: string }[];
-}) {
+function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
+  const month = useAppStore((s) => s.month);
   const [budgetDlg, setBudgetDlg] = useState(false);
 
   const isSpend = space.kind === 'spend';
@@ -257,6 +251,21 @@ function Hero({
   // Spend/personal heroes are month-scoped and get the month filter; fund/invest
   // heroes show a cumulative balance/value the month filter can't narrow.
   const monthScoped = isSpend || isPersonal;
+
+  // The hero carries its OWN month filter, independent of the activity list's.
+  // Defaults to the current month; resets when switching spaces.
+  const [monthSel, setMonthSel] = useState(month);
+  useEffect(() => setMonthSel(month), [space.id, month]);
+  // Months that actually have entries here (newest first) + the current month
+  // (so the default is always selectable) + an "All time" total.
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
+    set.add(month);
+    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    return [...keys.map((k) => ({ value: k, label: monthLabel(k) })), { value: 'all', label: 'All time' }];
+  }, [snapshot.txs, space.id, month]);
+
   const allTime = monthSel === 'all';
   // Undefined month → the selector totals across every month ("All time").
   const scope = allTime ? undefined : monthSel;
@@ -413,15 +422,7 @@ function Hero({
 }
 
 // ---- activity ------------------------------------------------------------
-function ActivityPanel({
-  space, desktop, monthSel, setMonthSel, monthOptions,
-}: {
-  space: Space;
-  desktop: boolean;
-  monthSel: string;
-  setMonthSel: (v: string) => void;
-  monthOptions: { value: string; label: string }[];
-}) {
+function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
@@ -429,6 +430,9 @@ function ActivityPanel({
   const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   // Multi-select category filter: an empty set means "All".
   const [catSel, setCatSel] = useState<Set<string>>(new Set());
+  // The activity ledger keeps its OWN month filter, independent of the hero's.
+  // Defaults to "all" — pagination keeps the full history manageable.
+  const [monthSel, setMonthSel] = useState('all');
   // Custom select-field filters: field.key → selected value ('all'/absent = no filter).
   const [fieldSel, setFieldSel] = useState<Record<string, string>>({});
   const [edit, setEdit] = useState(false);
@@ -440,11 +444,6 @@ function ActivityPanel({
   // Carry-forward dialog: null closed; otherwise the source/target months to prefill.
   const [carry, setCarry] = useState<{ source?: string; target?: string } | null>(null);
 
-  // Spend/personal spaces surface the month filter on the hero card; here it
-  // would duplicate, so this panel only shows its own month Select for
-  // fund/invest spaces (whose hero isn't month-scoped).
-  const monthOnHero = space.kind === 'spend' || space.kind === 'personal';
-
   const cats = space.cats;
   const toggleCat = (key: string) =>
     setCatSel((prev) => {
@@ -455,10 +454,20 @@ function ActivityPanel({
     });
   useEffect(() => {
     setCatSel(new Set());
+    setMonthSel('all');
     setFieldSel({});
     setEdit(false);
     setConfirmCat(null);
   }, [space.id]);
+
+  // Months that actually have entries in this space (newest first), for the
+  // month filter. Derived purely from tx dates — no store persistence.
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
+    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    return [{ value: 'all', label: 'All time' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
+  }, [snapshot.txs, space.id]);
 
   // Data-driven filters for select-type custom fields (mirrors monthOptions).
   // For each select field, collect the distinct non-empty values present in this
@@ -677,9 +686,9 @@ function ActivityPanel({
           </div>
         </Card>
       )}
-      {((!monthOnHero && monthOptions.length > 1) || fieldFilters.length > 0 || (carryable.length > 0 && !showCarryBanner)) && (
+      {(monthOptions.length > 1 || fieldFilters.length > 0 || (carryable.length > 0 && !showCarryBanner)) && (
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-3)', justifyContent: 'space-between' }}>
-          {!monthOnHero && monthOptions.length > 1 ? (
+          {monthOptions.length > 1 ? (
             <div style={{ maxWidth: 200, flex: 1 }}>
               <Select
                 size="sm"
@@ -848,27 +857,8 @@ export function SpaceDetail() {
   const snapshot = useAppStore((s) => s.snapshot);
   const openSpaceSettings = useAppStore((s) => s.openSpaceSettings);
   const space = snapshot.spaces.find((s) => s.id === id);
-  const month = useAppStore((s) => s.month);
   const [tab, setTab] = useState<'activity' | 'recurring'>('activity');
   useEffect(() => setTab('activity'), [id]);
-
-  // Unified month filter shared by the hero card and the activity ledger. Options
-  // are the months that actually have entries (newest first) plus "All time";
-  // spend/personal spaces also always offer the current month so the default is
-  // selectable even before any entry lands there.
-  const isMonthScoped = space?.kind === 'spend' || space?.kind === 'personal';
-  const monthOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const t of snapshot.txs) if (t.spaceId === space?.id) set.add(t.date.slice(0, 7));
-    if (isMonthScoped) set.add(month);
-    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-    return [...keys.map((k) => ({ value: k, label: monthLabel(k) })), { value: 'all', label: 'All time' }];
-  }, [snapshot.txs, space?.id, isMonthScoped, month]);
-  // Spend/personal default to the current month; fund/invest to the full history.
-  const [monthSel, setMonthSel] = useState(isMonthScoped ? month : 'all');
-  useEffect(() => {
-    setMonthSel(isMonthScoped ? month : 'all');
-  }, [id, isMonthScoped, month]);
 
   if (!space) {
     return (
@@ -898,13 +888,13 @@ export function SpaceDetail() {
             ]}
           />
           {tab === 'activity' ? (
-            <ActivityPanel space={space} desktop={isDesktop} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
+            <ActivityPanel space={space} desktop={isDesktop} />
           ) : (
             <RecurringPanel space={space} />
           )}
         </>
       ) : (
-        <ActivityPanel space={space} desktop={isDesktop} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
+        <ActivityPanel space={space} desktop={isDesktop} />
       )}
     </>
   );
@@ -913,7 +903,7 @@ export function SpaceDetail() {
     return (
       <>
         <div className="row-2">
-          <Hero space={space} desktop monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
+          <Hero space={space} desktop />
         </div>
         {panels}
       </>
@@ -933,7 +923,7 @@ export function SpaceDetail() {
         <span style={{ font: 'var(--font-label)', color: 'var(--text-muted)', flex: 1 }}>{space.name}</span>
         <IconButton icon="settings" label="Space settings" variant="ghost" onClick={() => openSpaceSettings(space.id)} />
       </div>
-      <Hero space={space} desktop={false} monthSel={monthSel} setMonthSel={setMonthSel} monthOptions={monthOptions} />
+      <Hero space={space} desktop={false} />
       {panels}
     </div>
   );

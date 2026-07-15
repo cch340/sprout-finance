@@ -71,14 +71,16 @@ export function monthShort(iso: string): string {
 
 /**
  * Short display date: "Today" when it matches `todayIso`, else "14 Jun".
- * `todayIso` defaults to the local calendar day.
+ * `todayIso` defaults to the local calendar day. Pass `withYear` to append the
+ * year ("14 Jun 2026") — useful for ledgers spanning multiple years.
  */
-export function shortDate(iso: string, todayIso: string = isoToday()): string {
+export function shortDate(iso: string, todayIso: string = isoToday(), withYear = false): string {
   if (monthKey(iso) === monthKey(todayIso) && iso.slice(0, 10) === todayIso) {
     return 'Today';
   }
-  const [, m, d] = iso.split('-');
-  return `${Number(d)} ${MONTHS_SHORT[Number(m) - 1] ?? ''}`.trim();
+  const [y, m, d] = iso.split('-');
+  const base = `${Number(d)} ${MONTHS_SHORT[Number(m) - 1] ?? ''}`.trim();
+  return withYear ? `${base} ${y}` : base;
 }
 
 /** Local calendar day as yyyy-mm-dd. */
