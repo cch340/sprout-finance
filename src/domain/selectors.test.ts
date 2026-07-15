@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed-demo';
 import { isoMonth } from './format';
 import {
-  categoriesWithOther, fundBalance, history, incomeOf, monthsInRange, OTHER_CATEGORY,
-  payerSpaceBreakdown, resolveCatKey, spendByPerson,
-  spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
-  totalBudget, totalSpent, UNSPECIFIED,
+  categoriesWithOther, fundBalance, history, incomeOf, leftThisMonth, monthsInRange,
+  OTHER_CATEGORY, payerSpaceBreakdown, resolveCatKey, spendByPerson,
+  spendByPersonRange, spendBySpaceRange, spentOf, spentOfPersonal, topCategories,
+  topCategoriesRange, totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
 import { migrateLegacyCategory } from './legacy-emoji';
 import type { Category, Space, Tx } from './types';
@@ -26,6 +26,25 @@ describe('spentOf', () => {
   it('excludes fund dir:out movements from spending', () => {
     // Joint fund has in 3000 and out 1714.2 this month — spentOf must be 0.
     expect(spentOf(spaceById('joint'), snap.txs, MONTH)).toBe(0);
+  });
+
+  it('totals across every month when the month arg is omitted ("All time")', () => {
+    const space = spaceById('expenses');
+    const months = [
+      ...new Set(snap.txs.filter((t) => t.spaceId === 'expenses').map((t) => t.date.slice(0, 7))),
+    ];
+    const perMonth = months.reduce((s, m) => s + spentOf(space, snap.txs, m), 0);
+    // Omitting month sums the whole history and is never below a single month.
+    expect(spentOf(space, snap.txs)).toBeCloseTo(perMonth, 2);
+    expect(spentOf(space, snap.txs)).toBeGreaterThanOrEqual(spentOf(space, snap.txs, MONTH));
+  });
+
+  it('leftThisMonth/personal roll-ups accept an omitted month for all-time totals', () => {
+    const jc = spaceById('jc');
+    expect(leftThisMonth(jc.id, snap.txs)).toBeCloseTo(
+      incomeOf(jc.id, snap.txs) - spentOfPersonal(jc.id, snap.txs),
+      2,
+    );
   });
 });
 

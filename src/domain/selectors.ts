@@ -44,8 +44,9 @@ export function spendSpaces(spaces: Space[]): Space[] {
 /**
  * spentOf — sum of non-income tx for a space in a month. For fund spaces a
  * `dir:'out'` movement is a transfer, not spending, so it contributes 0.
+ * Omit `month` to total across all months ("all time").
  */
-export function spentOf(space: Space, txs: Tx[], month: string): number {
+export function spentOf(space: Space, txs: Tx[], month?: string): number {
   return spaceTxs(space.id, txs, month)
     .filter((t) => t.dir !== 'in')
     .reduce((sum, t) => sum + (t.dir === 'out' && space.kind === 'fund' ? 0 : t.amount), 0);
@@ -128,22 +129,22 @@ export function topCategories(
   return [...agg.values()].sort((a, b) => b.value - a.value).slice(0, limit);
 }
 
-/** Income = sum of dir:'in' tx in a personal space for the month. */
-export function incomeOf(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Income = sum of dir:'in' tx in a personal space for the month (all months if omitted). */
+export function incomeOf(personalSpaceId: string, txs: Tx[], month?: string): number {
   return spaceTxs(personalSpaceId, txs, month)
     .filter((t) => t.dir === 'in')
     .reduce((s, t) => s + t.amount, 0);
 }
 
-/** Spent = sum of dir:'out' tx in a personal space for the month. */
-export function spentOfPersonal(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Spent = sum of dir:'out' tx in a personal space for the month (all months if omitted). */
+export function spentOfPersonal(personalSpaceId: string, txs: Tx[], month?: string): number {
   return spaceTxs(personalSpaceId, txs, month)
     .filter((t) => t.dir === 'out')
     .reduce((s, t) => s + t.amount, 0);
 }
 
-/** Income − spent for a personal space in the month. */
-export function leftThisMonth(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Income − spent for a personal space in the month (all months if omitted). */
+export function leftThisMonth(personalSpaceId: string, txs: Tx[], month?: string): number {
   return incomeOf(personalSpaceId, txs, month) - spentOfPersonal(personalSpaceId, txs, month);
 }
 
