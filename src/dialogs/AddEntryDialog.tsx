@@ -10,6 +10,7 @@ import {
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import { isoToday } from '../domain/format';
+import { categoriesWithOther, resolveCatKey } from '../domain/selectors';
 import type { FieldDef, Space, TxDir } from '../domain/types';
 
 /**
@@ -159,8 +160,8 @@ export function AddEntryDialog() {
   const [amount, setAmount] = useState('');
   const [cat, setCat] = useState(cats[0]?.key ?? 'other');
   const [fieldVals, setFieldVals] = useState<Record<string, string>>({});
-  // Optional "Paid from": '' = not specified, a person name (attribution only),
-  // or a fund's short/name (also records a mirror withdrawal in that fund).
+  // Optional "Paid from" attribution only: '' = not specified, a person name, or
+  // a fund's short/name (a reference label; it does not move money between spaces).
   const [payer, setPayer] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(isoToday());
@@ -177,7 +178,9 @@ export function AddEntryDialog() {
       setSpaceId(editTx.spaceId);
       setDir(editTx.dir);
       setAmount(String(editTx.amount));
-      setCat(editTx.cat);
+      // Normalise onto a category the space still defines; a deleted one → Other.
+      const eSpace = spaces.find((s) => s.id === editTx.spaceId);
+      setCat(eSpace ? resolveCatKey(eSpace, editTx.cat) : editTx.cat);
       setFieldVals({ ...editTx.fieldValues });
       setPayer(editTx.payer ?? '');
       setNote(editTx.note ?? '');
@@ -214,9 +217,10 @@ export function AddEntryDialog() {
   const setField = (key: string, v: string) =>
     setFieldVals((s) => ({ ...s, [key]: v }));
 
-  // "Paid from" options: an empty default, each household person (attribution
-  // only), then each fund space. A fund's value is its short label (or name),
-  // which also matches legacy 'Joint' payer strings so old + new data co-bucket.
+  // "Paid from" options: an empty default, each household person, then each fund
+  // space. A fund's value is its short label (or name), which also matches legacy
+  // 'Joint' payer strings so old + new data co-bucket. Attribution only — the
+  // selection is a reference label and never moves money between spaces.
   const payerOptions = useMemo(() => {
     const persons = people
       .filter((p) => p.id !== 'leo')
@@ -227,12 +231,6 @@ export function AddEntryDialog() {
       .map((f) => ({ value: f.short ?? f.name, label: f.name }));
     return [{ value: '', label: 'Not specified' }, ...persons, ...funds];
   }, [people, spaces]);
-
-  // If the chosen payer maps to a fund space, wire the mirror withdrawal.
-  const paidFromFundId = useMemo(
-    () => spaces.find((s) => s.kind === 'fund' && (s.short ?? s.name) === payer)?.id,
-    [spaces, payer],
-  );
 
   const amountNum = parseFloat(amount) || 0;
   const amountInvalid = showError && amountNum <= 0;
@@ -254,7 +252,6 @@ export function AddEntryDialog() {
         cat,
         dir,
         payer: isPersonal ? undefined : payer,
-        paidFromFundId: isPersonal ? undefined : paidFromFundId,
         note: note.trim(),
         title,
         date,
@@ -269,7 +266,6 @@ export function AddEntryDialog() {
       cat,
       dir,
       payer: isPersonal ? undefined : payer,
-      paidFromFundId: isPersonal ? undefined : paidFromFundId,
       note: note.trim(),
       title,
       date,
@@ -325,7 +321,7 @@ export function AddEntryDialog() {
         />
 
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--space-3)' }}>
-          <CategoryIcon category={cat} emoji={cats.find((c) => c.key === cat)?.emoji} size={52} />
+          <CategoryIcon category={cat} icon={cats.find((c) => c.key === cat)?.icon} size={52} />
           <div style={{ flex: 1 }}>
             <Input
               label="Amount"
@@ -356,7 +352,7 @@ export function AddEntryDialog() {
           label={catLabel}
           value={cat}
           onChange={(e) => setCat(e.target.value)}
-          options={cats.map((c) => ({ value: c.key, label: c.label }))}
+          options={categoriesWithOther({ cats }).map((c) => ({ value: c.key, label: c.label }))}
         />
 
         {primary && (

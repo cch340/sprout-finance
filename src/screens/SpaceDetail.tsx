@@ -3,12 +3,12 @@ import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Amount,
-  Badge,
   Button,
   Card,
-  CategoryEmojiPicker,
   CategoryIcon,
+  CategoryIconPicker,
   Dialog,
+  Icon,
   IconButton,
   Input,
   ListRow,
@@ -17,10 +17,10 @@ import {
   Select,
   Tag,
 } from '../design-system';
-import type { BadgeTone } from '../design-system';
+import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
-import type { Category, Space, Tx } from '../domain/types';
-import { fundBalance, incomeOf, leftThisMonth, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
+import type { Category, RecurringItem, Space, Tx } from '../domain/types';
+import { fundBalance, incomeOf, leftThisMonth, OTHER_CATEGORY, resolveCatKey, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
 import { monthLabel, shortDate } from '../domain/format';
 import { CarryForwardDialog } from '../dialogs/CarryForwardDialog';
 
@@ -48,19 +48,6 @@ function subtitleFor(space: Space, t: Tx): string {
   ]
     .filter(Boolean)
     .join(' · ');
-}
-
-function statusTone(s?: Tx['status']): BadgeTone {
-  return s === 'paid' ? 'income' : s === 'due' ? 'warning' : 'neutral';
-}
-
-function statusMeta(t: Tx) {
-  if (!t.status) return shortDate(t.date);
-  return (
-    <Badge tone={statusTone(t.status)} dot>
-      {t.status === 'due' ? `Due ${shortDate(t.date)}` : 'Paid'}
-    </Badge>
-  );
 }
 
 // ---- budget dialog -------------------------------------------------------
@@ -122,40 +109,68 @@ function RecurringDialog({
   onClose,
   spaceId,
   cats,
+  isFund,
+  editItem,
 }: {
   open: boolean;
   onClose: () => void;
   spaceId: string;
   cats: Category[];
+  isFund: boolean;
+  /** When set, the dialog edits this item (shows Delete); otherwise it adds. */
+  editItem?: RecurringItem | null;
 }) {
   const addRecurring = useAppStore((s) => s.addRecurring);
+  const updateRecurring = useAppStore((s) => s.updateRecurring);
+  const deleteRecurring = useAppStore((s) => s.deleteRecurring);
+  const isEdit = Boolean(editItem);
+  const noun = isFund ? 'contribution' : 'commitment';
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
+  const [remark, setRemark] = useState('');
   const [cat, setCat] = useState(cats[0]?.key ?? 'money');
   useEffect(() => {
     if (open) {
-      setLabel('');
-      setAmount('');
-      setCat(cats[0]?.key ?? 'money');
+      setLabel(editItem?.label ?? '');
+      setAmount(editItem ? String(editItem.amount) : '');
+      setRemark(editItem?.remark ?? '');
+      setCat(editItem?.cat ?? cats[0]?.key ?? 'money');
     }
-  }, [open, cats]);
-  const add = () => {
-    void addRecurring({ spaceId, label, cat, amount: parseFloat(amount) || 0 });
+  }, [open, cats, editItem]);
+  const save = () => {
+    const r = remark.trim();
+    const fields = { label, cat, amount: parseFloat(amount) || 0, remark: r || undefined };
+    if (isEdit && editItem) void updateRecurring(editItem.id, fields);
+    else void addRecurring({ spaceId, ...fields });
+    onClose();
+  };
+  const remove = () => {
+    if (editItem) void deleteRecurring(editItem.id);
     onClose();
   };
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title="Add commitment"
-      description="A fixed amount that repeats every month."
+      title={`${isEdit ? 'Edit' : 'Add'} ${noun}`}
+      description={`A fixed amount that ${isFund ? 'builds this fund' : 'repeats'} every month.`}
       footer={
         <>
+          {isEdit && (
+            <Button
+              variant="ghost"
+              iconStart="trash"
+              onClick={remove}
+              style={{ color: 'var(--danger-500)', marginRight: 'auto' }}
+            >
+              Delete
+            </Button>
+          )}
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button iconStart="check" onClick={add} disabled={!label || !amount}>
-            Add
+          <Button iconStart="check" onClick={save} disabled={!label || !amount}>
+            {isEdit ? 'Save' : 'Add'}
           </Button>
         </>
       }
@@ -175,6 +190,12 @@ function RecurringDialog({
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+        />
+        <Input
+          label="Remark (optional)"
+          placeholder="e.g. JC 1,045 · CH 1,045"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
         />
         {cats.length > 0 && (
           <Select
@@ -197,28 +218,64 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
 
   const isSpend = space.kind === 'spend';
   const isPersonal = space.kind === 'personal';
+  // Spend/personal heroes are month-scoped and get the month filter; fund/invest
+  // heroes show a cumulative balance/value the month filter can't narrow.
+  const monthScoped = isSpend || isPersonal;
+
+  // The hero carries its OWN month filter, independent of the activity list's.
+  // Defaults to the current month; resets when switching spaces.
+  const [monthSel, setMonthSel] = useState(month);
+  useEffect(() => setMonthSel(month), [space.id, month]);
+  // Months that actually have entries here (newest first) + the current month
+  // (so the default is always selectable) + an "All time" total.
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
+    set.add(month);
+    const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+    return [...keys.map((k) => ({ value: k, label: monthLabel(k) })), { value: 'all', label: 'All time' }];
+  }, [snapshot.txs, space.id, month]);
+
+  const allTime = monthSel === 'all';
+  // Undefined month → the selector totals across every month ("All time").
+  const scope = allTime ? undefined : monthSel;
   const label =
     space.kind === 'fund'
       ? 'Shared balance'
       : space.kind === 'invest'
         ? `${space.sub ? space.sub + ' · ' : ''}portfolio value`
         : isPersonal
-          ? 'Left this month'
-          : 'Spent this month';
+          ? allTime ? 'Net · all time' : 'Left this month'
+          : allTime ? 'Spent · all time' : 'Spent this month';
   const value =
     space.kind === 'fund'
       ? fundBalance(space, snapshot.txs)
       : space.kind === 'invest'
         ? space.value ?? 0
         : isPersonal
-          ? leftThisMonth(space.id, snapshot.txs, month)
-          : spentOf(space, snapshot.txs, month);
+          ? leftThisMonth(space.id, snapshot.txs, scope)
+          : spentOf(space, snapshot.txs, scope);
   const budget = space.budget ?? 0;
 
   // Desktop hero is always sage; mobile spend hero is a white card.
   const sageCard = desktop || !isSpend;
 
-  const budgetRow = isSpend && (
+  // Month filter chip on the hero (spend/personal only). A monthly budget can't
+  // meaningfully compare against an all-months total, so the budget row is
+  // hidden while "All time" is selected.
+  const monthPicker = monthScoped && (
+    <div style={{ maxWidth: 150 }}>
+      <Select
+        size="sm"
+        aria-label="Filter by month"
+        value={monthSel}
+        onChange={(e) => setMonthSel(e.target.value)}
+        options={monthOptions}
+      />
+    </div>
+  );
+
+  const budgetRow = isSpend && !allTime && (
     <div style={{ marginTop: 16 }}>
       {budget > 0 ? (
         desktop ? (
@@ -301,9 +358,12 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
         border: sageCard ? 'none' : undefined,
       }}
     >
-      <span style={{ font: 'var(--font-label)', color: sageCard ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)' }}>
-        {label}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <span style={{ font: 'var(--font-label)', color: sageCard ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)' }}>
+          {label}
+        </span>
+        {monthPicker}
+      </div>
       <Amount
         value={value}
         size="hero"
@@ -312,10 +372,10 @@ function Hero({ space, desktop }: { space: Space; desktop: boolean }) {
       {isPersonal && (
         <div style={{ display: 'flex', gap: 18, marginTop: 12 }}>
           <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
-            Income RM {incomeOf(space.id, snapshot.txs, month).toLocaleString()}
+            Income RM {incomeOf(space.id, snapshot.txs, scope).toLocaleString()}
           </span>
           <span style={{ font: 'var(--font-caption)', color: 'rgba(255,255,255,0.9)' }}>
-            Spent RM {spentOfPersonal(space.id, snapshot.txs, month).toLocaleString()}
+            Spent RM {spentOfPersonal(space.id, snapshot.txs, scope).toLocaleString()}
           </span>
         </div>
       )}
@@ -336,15 +396,20 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
   const updateSpace = useAppStore((s) => s.updateSpace);
+  const deleteCategory = useAppStore((s) => s.deleteCategory);
   const openEntryDetail = useAppStore((s) => s.openEntryDetail);
   // Multi-select category filter: an empty set means "All".
   const [catSel, setCatSel] = useState<Set<string>>(new Set());
+  // The activity ledger keeps its OWN month filter, independent of the hero's.
+  // Defaults to "all" — pagination keeps the full history manageable.
   const [monthSel, setMonthSel] = useState('all');
   // Custom select-field filters: field.key → selected value ('all'/absent = no filter).
   const [fieldSel, setFieldSel] = useState<Record<string, string>>({});
   const [edit, setEdit] = useState(false);
+  // Category pending deletion confirmation (its entries move to "Other").
+  const [confirmCat, setConfirmCat] = useState<string | null>(null);
   const [newCat, setNewCat] = useState('');
-  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
+  const [newIcon, setNewIcon] = useState<IconName | undefined>(undefined);
   const [visible, setVisible] = useState(PAGE);
   // Carry-forward dialog: null closed; otherwise the source/target months to prefill.
   const [carry, setCarry] = useState<{ source?: string; target?: string } | null>(null);
@@ -362,6 +427,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     setMonthSel('all');
     setFieldSel({});
     setEdit(false);
+    setConfirmCat(null);
   }, [space.id]);
 
   // Months that actually have entries in this space (newest first), for the
@@ -370,7 +436,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
     const set = new Set<string>();
     for (const t of snapshot.txs) if (t.spaceId === space.id) set.add(t.date.slice(0, 7));
     const keys = [...set].sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-    return [{ value: 'all', label: 'All months' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
+    return [{ value: 'all', label: 'All time' }, ...keys.map((k) => ({ value: k, label: monthLabel(k) }))];
   }, [snapshot.txs, space.id]);
 
   // Data-driven filters for select-type custom fields (mirrors monthOptions).
@@ -404,7 +470,9 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   // Reports) stay parameterized by `month`, unaffected by this view state.
   const list = useMemo(() => {
     let l = snapshot.txs.filter((t) => t.spaceId === space.id);
-    if (catSel.size > 0) l = l.filter((t) => catSel.has(t.cat));
+    // Match on the resolved key so a "Other" selection also catches entries
+    // whose category was deleted (their key no longer maps to a space category).
+    if (catSel.size > 0) l = l.filter((t) => catSel.has(resolveCatKey(space, t.cat)));
     if (monthSel !== 'all') l = l.filter((t) => t.date.slice(0, 7) === monthSel);
     for (const [key, val] of Object.entries(fieldSel)) {
       if (val && val !== 'all') l = l.filter((t) => t.fieldValues[key] === val);
@@ -431,21 +499,34 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
   const currentMonthHasEntries = carryable.some((t) => t.date.slice(0, 7) === month);
   const showCarryBanner = carryable.length > 0 && !currentMonthHasEntries && latestMonth && latestMonth !== month;
 
-  const removeCat = (key: string) => {
-    void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
-    if (catSel.has(key)) toggleCat(key);
+  // Two-step delete: clicking X arms a confirmation; confirming reassigns the
+  // category's entries to "Other" (see store deleteCategory).
+  const confirmRemoveCat = () => {
+    if (!confirmCat) return;
+    void deleteCategory(space.id, confirmCat);
+    if (catSel.has(confirmCat)) toggleCat(confirmCat);
+    setConfirmCat(null);
   };
   const addCat = () => {
     const label = newCat.trim();
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
-    if (!cats.some((c) => c.key === key)) {
-      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+    // 'other' is the reserved virtual fallback — it can't be created explicitly.
+    if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
+      const c: Category = newIcon ? { key, label, icon: newIcon } : { key, label };
       void updateSpace(space.id, { cats: [...cats, c] });
     }
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
   };
+  // Whether any entry in this space falls into the virtual "Other" bucket.
+  const hasOther = snapshot.txs.some(
+    (t) => t.spaceId === space.id && !cats.some((c) => c.key === t.cat),
+  );
+  const confirmCatLabel = cats.find((c) => c.key === confirmCat)?.label ?? confirmCat;
+  const confirmCatCount = confirmCat
+    ? snapshot.txs.filter((t) => t.spaceId === space.id && t.cat === confirmCat).length
+    : 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
@@ -480,12 +561,22 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
                 key={c.key}
                 selected={!edit && catSel.has(c.key)}
                 onClick={edit ? undefined : () => toggleCat(c.key)}
-                onRemove={edit ? () => removeCat(c.key) : undefined}
+                onRemove={edit ? () => setConfirmCat(c.key) : undefined}
               >
-                <CategoryIcon category={c.key} emoji={c.emoji} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
+                <CategoryIcon category={c.key} icon={c.icon} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
                 {c.label}
               </Tag>
             ))}
+            {/* "Other" — virtual fallback; a filter chip only, never editable. */}
+            {!edit && hasOther && (
+              <Tag
+                selected={catSel.has(OTHER_CATEGORY.key)}
+                onClick={() => toggleCat(OTHER_CATEGORY.key)}
+              >
+                <CategoryIcon category={OTHER_CATEGORY.key} size={18} radius="var(--radius-xs)" style={{ marginRight: 4 }} />
+                {OTHER_CATEGORY.label}
+              </Tag>
+            )}
             {edit && (
               <input
                 value={newCat}
@@ -510,12 +601,40 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
               />
             )}
           </div>
+          {edit && confirmCat && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: '10px 12px',
+                background: 'var(--surface-sunken)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--space-2)',
+              }}
+            >
+              <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                Delete “{confirmCatLabel}”?{' '}
+                {confirmCatCount > 0
+                  ? `${confirmCatCount} ${confirmCatCount === 1 ? 'entry' : 'entries'} will move to “Other”.`
+                  : 'It has no entries.'}
+              </span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button variant="danger" size="sm" iconStart="trash" onClick={confirmRemoveCat}>
+                  Delete category
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setConfirmCat(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
           {edit && (
             <div style={{ marginTop: 10 }}>
               <span style={{ display: 'block', font: 'var(--font-caption)', color: 'var(--text-muted)', margin: '0 4px 6px' }}>
-                Pick an emoji for the new category
+                Pick an icon for the new category
               </span>
-              <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} style={{ padding: '0 4px' }} />
+              <CategoryIconPicker value={newIcon} onChange={setNewIcon} style={{ padding: '0 4px' }} />
             </div>
           )}
         </div>
@@ -587,13 +706,13 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
           shown.map((t, i) => (
             <ListRow
               key={t.id}
-              leading={<CategoryIcon category={t.cat} emoji={cats.find((c) => c.key === t.cat)?.emoji} />}
+              leading={<CategoryIcon category={t.cat} icon={cats.find((c) => c.key === t.cat)?.icon} />}
               title={t.title}
               subtitle={subtitleFor(space, t)}
               trailing={
                 <Amount value={t.amount} kind={t.dir === 'in' ? 'in' : 'neutral'} showSign={t.dir === 'in'} />
               }
-              meta={statusMeta(t)}
+              meta={shortDate(t.date, undefined, true)}
               onClick={() => openEntryDetail(t.id)}
               divider={i < shown.length - 1}
             />
@@ -626,14 +745,14 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
 // ---- recurring -----------------------------------------------------------
 function RecurringPanel({ space }: { space: Space }) {
   const snapshot = useAppStore((s) => s.snapshot);
-  const deleteRecurring = useAppStore((s) => s.deleteRecurring);
-  const [edit, setEdit] = useState(false);
-  const [dlg, setDlg] = useState(false);
+  // null = closed, 'add' = add dialog, or the item being viewed/edited.
+  const [dlg, setDlg] = useState<'add' | RecurringItem | null>(null);
 
   const isFund = space.kind === 'fund';
   const items = snapshot.recurring.filter((r) => r.spaceId === space.id);
   const sum = items.reduce((a, r) => a + r.amount, 0);
-  useEffect(() => setEdit(false), [space.id]);
+  const noun = isFund ? 'contribution' : 'commitment';
+  useEffect(() => setDlg(null), [space.id]);
 
   return (
     <div>
@@ -642,14 +761,14 @@ function RecurringPanel({ space }: { space: Space }) {
           {isFund ? 'How the fund is formed' : 'Monthly commitments'}
         </span>
         <button
-          onClick={() => setEdit((e) => !e)}
-          style={{ border: 'none', background: 'none', cursor: 'pointer', font: 'var(--font-label)', color: 'var(--accent)', padding: 4 }}
+          onClick={() => setDlg('add')}
+          style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'none', cursor: 'pointer', font: 'var(--font-label)', color: 'var(--accent)', padding: 4 }}
         >
-          {edit ? 'Done' : 'Edit'}
+          <Icon name="plus" size={16} /> Add
         </button>
       </div>
       <Card padding="sm">
-        {items.length === 0 && !edit && (
+        {items.length === 0 && (
           <div
             style={{
               padding: 'var(--space-8) var(--space-5)',
@@ -665,38 +784,22 @@ function RecurringPanel({ space }: { space: Space }) {
                 ? 'No contributions yet. Add the amounts that build this fund each month.'
                 : 'No recurring items yet. Add the fixed amounts that repeat every month.'}
             </p>
-            <Button variant="secondary" iconStart="plus" onClick={() => setDlg(true)}>
-              {isFund ? 'Add contribution' : 'Add recurring'}
+            <Button variant="secondary" iconStart="plus" onClick={() => setDlg('add')}>
+              Add {noun}
             </Button>
           </div>
         )}
         {items.map((r) => (
           <ListRow
             key={r.id}
-            leading={<CategoryIcon category={r.cat} emoji={space.cats.find((c) => c.key === r.cat)?.emoji} />}
+            leading={<CategoryIcon category={r.cat} icon={space.cats.find((c) => c.key === r.cat)?.icon} />}
             title={r.label}
-            trailing={
-              edit ? (
-                <IconButton icon="x" label="Remove" variant="ghost" size="sm" onClick={() => void deleteRecurring(r.id)} />
-              ) : (
-                <Amount value={r.amount} kind={isFund ? 'in' : 'neutral'} showSign={isFund} />
-              )
-            }
+            subtitle={r.remark || undefined}
+            trailing={<Amount value={r.amount} kind={isFund ? 'in' : 'neutral'} showSign={isFund} />}
+            onClick={() => setDlg(r)}
             divider
           />
         ))}
-        {edit && (
-          <ListRow
-            leading={
-              <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-md)', border: '1.5px dashed var(--border-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                +
-              </div>
-            }
-            title={<span style={{ color: 'var(--accent)', fontWeight: 'var(--fw-semibold)' }}>Add commitment</span>}
-            onClick={() => setDlg(true)}
-            divider
-          />
-        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-3)' }}>
           <span style={{ font: 'var(--font-label)', color: 'var(--text-muted)' }}>
             {isFund ? 'Total contributed' : 'Total / month'}
@@ -704,7 +807,14 @@ function RecurringPanel({ space }: { space: Space }) {
           <Amount value={sum} kind={isFund ? 'in' : 'neutral'} showSign={isFund} weight={'var(--fw-extra)' as CSSProperties['fontWeight']} />
         </div>
       </Card>
-      <RecurringDialog open={dlg} onClose={() => setDlg(false)} spaceId={space.id} cats={space.cats} />
+      <RecurringDialog
+        open={dlg !== null}
+        onClose={() => setDlg(null)}
+        spaceId={space.id}
+        cats={space.cats}
+        isFund={isFund}
+        editItem={dlg && dlg !== 'add' ? dlg : null}
+      />
     </div>
   );
 }

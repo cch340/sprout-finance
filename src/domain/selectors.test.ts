@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed-demo';
 import { isoMonth } from './format';
 import {
-  fundBalance, history, incomeOf, monthsInRange, payerSpaceBreakdown, spendByPerson,
-  spendByPersonRange, spendBySpaceRange, spentOf, topCategories, topCategoriesRange,
-  totalBudget, totalSpent, UNSPECIFIED,
+  categoriesWithOther, fundBalance, history, incomeOf, leftThisMonth, monthsInRange,
+  OTHER_CATEGORY, payerSpaceBreakdown, resolveCatKey, spendByPerson,
+  spendByPersonRange, spendBySpaceRange, spentOf, spentOfPersonal, topCategories,
+  topCategoriesRange, totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
-import type { Space, Tx } from './types';
+import { migrateLegacyCategory } from './legacy-emoji';
+import type { Category, Space, Tx } from './types';
 
 // Pin the reference month so the demo maps deterministically.
 const REF = new Date(2026, 6, 12); // July 2026 (month index 6)
@@ -24,6 +26,25 @@ describe('spentOf', () => {
   it('excludes fund dir:out movements from spending', () => {
     // Joint fund has in 3000 and out 1714.2 this month — spentOf must be 0.
     expect(spentOf(spaceById('joint'), snap.txs, MONTH)).toBe(0);
+  });
+
+  it('totals across every month when the month arg is omitted ("All time")', () => {
+    const space = spaceById('expenses');
+    const months = [
+      ...new Set(snap.txs.filter((t) => t.spaceId === 'expenses').map((t) => t.date.slice(0, 7))),
+    ];
+    const perMonth = months.reduce((s, m) => s + spentOf(space, snap.txs, m), 0);
+    // Omitting month sums the whole history and is never below a single month.
+    expect(spentOf(space, snap.txs)).toBeCloseTo(perMonth, 2);
+    expect(spentOf(space, snap.txs)).toBeGreaterThanOrEqual(spentOf(space, snap.txs, MONTH));
+  });
+
+  it('leftThisMonth/personal roll-ups accept an omitted month for all-time totals', () => {
+    const jc = spaceById('jc');
+    expect(leftThisMonth(jc.id, snap.txs)).toBeCloseTo(
+      incomeOf(jc.id, snap.txs) - spentOfPersonal(jc.id, snap.txs),
+      2,
+    );
   });
 });
 
@@ -56,16 +77,42 @@ describe('roll-ups', () => {
     }
   });
 
-  it('topCategories surfaces a category custom emoji when set', () => {
+  it('topCategories surfaces a category custom icon when set', () => {
     const spaces = snap.spaces.map((s) =>
       s.id === 'expenses'
-        ? { ...s, cats: s.cats.map((c) => (c.key === 'grocery' ? { ...c, emoji: '☕' } : c)) }
+        ? { ...s, cats: s.cats.map((c) => (c.key === 'grocery' ? { ...c, icon: 'coffee' } : c)) }
         : s,
     );
     const top = topCategories(spaces, snap.txs, MONTH);
-    expect(top.find((t) => t.cat === 'grocery')?.emoji).toBe('☕');
-    // categories without a custom emoji stay undefined (keyed-glyph fallback)
-    expect(top.find((t) => t.cat === 'installment')?.emoji).toBeUndefined();
+    expect(top.find((t) => t.cat === 'grocery')?.icon).toBe('coffee');
+    // categories without a custom icon stay undefined (keyed-icon fallback)
+    expect(top.find((t) => t.cat === 'installment')?.icon).toBeUndefined();
+  });
+});
+
+describe('migrateLegacyCategory', () => {
+  it('converts a mapped legacy emoji to its icon name', () => {
+    const c: Category & { emoji?: string } = { key: 'coffee', label: 'Coffee', emoji: '☕' };
+    const out = migrateLegacyCategory(c);
+    expect(out.icon).toBe('coffee');
+    expect('emoji' in out).toBe(false);
+  });
+
+  it('matches emoji regardless of the U+FE0F variation selector', () => {
+    expect(migrateLegacyCategory({ key: 'd', label: 'Dining', emoji: '🍽️' }).icon).toBe('utensils');
+    expect(migrateLegacyCategory({ key: 'd', label: 'Dining', emoji: '🍽' }).icon).toBe('utensils');
+  });
+
+  it('drops an unmapped legacy emoji, leaving icon undefined', () => {
+    const out = migrateLegacyCategory({ key: 'x', label: 'X', emoji: '🦄' });
+    expect(out.icon).toBeUndefined();
+    expect('emoji' in out).toBe(false);
+  });
+
+  it('passes an existing icon through and never keeps an emoji key', () => {
+    const out = migrateLegacyCategory({ key: 'g', label: 'Groceries', icon: 'shopping-cart', emoji: '☕' });
+    expect(out.icon).toBe('shopping-cart'); // explicit icon wins over legacy emoji
+    expect('emoji' in out).toBe(false);
   });
 });
 
@@ -156,6 +203,24 @@ describe('range-aware reports selectors', () => {
     const rangeSum = bySpace.reduce((a, s) => a + s.value, 0);
     const historySum = history(snap.spaces, snap.txs, 6, REF).reduce((a, h) => a + h.value, 0);
     expect(rangeSum).toBeCloseTo(historySum, 2);
+  });
+
+  it('categoriesWithOther appends the virtual Other, without duplicating it', () => {
+    const withCats = { cats: [{ key: 'a', label: 'A' }] };
+    const out = categoriesWithOther(withCats);
+    expect(out.map((c) => c.key)).toEqual(['a', OTHER_CATEGORY.key]);
+    // Empty space still offers Other.
+    expect(categoriesWithOther({ cats: [] })).toEqual([OTHER_CATEGORY]);
+    // Never doubled if a space somehow already carries an 'other'.
+    const dup = { cats: [{ key: 'other', label: 'Other' }] };
+    expect(categoriesWithOther(dup).filter((c) => c.key === 'other')).toHaveLength(1);
+  });
+
+  it('resolveCatKey maps unknown/deleted categories onto Other', () => {
+    const space = { cats: [{ key: 'a', label: 'A' }] };
+    expect(resolveCatKey(space, 'a')).toBe('a');
+    expect(resolveCatKey(space, 'deleted-key')).toBe(OTHER_CATEGORY.key);
+    expect(resolveCatKey(space, 'other')).toBe(OTHER_CATEGORY.key);
   });
 
   it('payerSpaceBreakdown yields non-zero per-space rows for a payer', () => {

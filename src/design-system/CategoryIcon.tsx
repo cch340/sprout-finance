@@ -1,59 +1,53 @@
 import type { CSSProperties, HTMLAttributes } from 'react';
-
-const NEUTRAL = { bg: 'var(--surface-hover)', fg: 'var(--text-muted)' };
-
-interface CatDef {
-  emoji: string;
-  bg: string;
-  fg?: string;
-}
+import { Icon, PATHS, type IconName } from './Icon';
 
 /**
  * Categories in Sprout are SCOPED to a space. This map is the union of all
- * category glyphs; which ones appear where is decided by the app data layer.
+ * category icons; which ones appear where is decided by the app data layer.
  */
-const CATEGORIES: Record<string, CatDef> = {
+const CATEGORIES: Record<string, IconName> = {
   // Everyday Expenses
-  grocery: { emoji: '🛒', bg: 'var(--cat-food-bg)' },
-  meals: { emoji: '🍜', bg: 'var(--cat-food-bg)' },
-  baby: { emoji: '👶', bg: 'var(--cat-baby-bg)' },
-  shopping: { emoji: '🛍️', bg: 'var(--cat-shopping-bg)' },
+  grocery: 'shopping-cart',
+  meals: 'soup',
+  baby: 'baby',
+  shopping: 'shopping-bag',
   // Housing (TreeO)
-  installment: { emoji: '🏠', bg: 'var(--cat-house-bg)' },
-  electric: { emoji: '⚡', bg: 'var(--cat-food-bg)' },
-  water: { emoji: '💧', bg: 'var(--cat-car-bg)' },
-  internet: { emoji: '📶', bg: 'var(--cat-car-bg)' },
-  maintenance: { emoji: '🔧', ...NEUTRAL },
-  furniture: { emoji: '🛋️', bg: 'var(--cat-shopping-bg)' },
-  appliance: { emoji: '🔌', bg: 'var(--cat-car-bg)' },
+  installment: 'home',
+  electric: 'zap',
+  water: 'droplet',
+  internet: 'wifi',
+  maintenance: 'wrench',
+  furniture: 'armchair',
+  appliance: 'plug',
   // Car
-  car: { emoji: '🚗', bg: 'var(--cat-car-bg)' },
-  roadtax: { emoji: '🛡️', bg: 'var(--cat-car-bg)' },
-  petrol: { emoji: '⛽', bg: 'var(--cat-car-bg)' },
+  car: 'car',
+  roadtax: 'shield',
+  petrol: 'fuel',
   // Investment
-  investment: { emoji: '📈', bg: 'var(--cat-house-bg)' },
+  investment: 'trending-up',
   // Personal (JC / CH)
-  income: { emoji: '💵', bg: 'var(--cat-house-bg)' },
-  subscriptions: { emoji: '🔄', bg: 'var(--cat-shopping-bg)' },
-  insurance: { emoji: '🛡️', bg: 'var(--cat-car-bg)' },
-  parent: { emoji: '👪', bg: 'var(--cat-baby-bg)' },
-  ptptn: { emoji: '🎓', bg: 'var(--cat-car-bg)' },
-  mobile: { emoji: '📱', bg: 'var(--cat-car-bg)' },
-  house: { emoji: '🏠', bg: 'var(--cat-house-bg)' },
-  joint: { emoji: '🌱', bg: 'var(--cat-house-bg)' },
+  income: 'banknote',
+  subscriptions: 'repeat',
+  insurance: 'shield',
+  parent: 'users',
+  ptptn: 'graduation-cap',
+  mobile: 'smartphone',
+  house: 'home',
+  joint: 'sprout',
   // Generic
-  bills: { emoji: '🧾', bg: 'var(--cat-bills-bg)' },
-  health: { emoji: '💊', bg: 'var(--cat-bills-bg)' },
-  savings: { emoji: '🌱', bg: 'var(--cat-house-bg)' },
-  money: { emoji: '💵', bg: 'var(--cat-house-bg)' },
-  other: { emoji: '📦', ...NEUTRAL },
+  bills: 'receipt',
+  health: 'pill',
+  savings: 'sprout',
+  money: 'banknote',
+  other: 'package',
 };
 
 export const categoryKeys = Object.keys(CATEGORIES);
 
 export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'style'> {
   category?: string;
-  emoji?: string;
+  /** Explicit icon name (domain stores it as a plain string); unknown names fall back to the keyed mapping. */
+  icon?: string;
   size?: number;
   radius?: string;
   className?: string;
@@ -61,19 +55,22 @@ export interface CategoryIconProps extends Omit<HTMLAttributes<HTMLSpanElement>,
 }
 
 /**
- * CategoryIcon — the emoji-in-a-tinted-tile marker Sprout uses for
- * expense categories.
+ * CategoryIcon — the icon-in-a-neutral-tile marker Sprout uses for expense
+ * categories. The glyph carries the meaning; the tile uses the theme's
+ * neutral surface/text colors so seeded and custom categories look alike.
+ * An explicit `icon` prop overrides the keyed mapping.
  */
 export function CategoryIcon({
   category = 'money',
-  emoji,
+  icon,
   size = 40,
   radius = 'var(--radius-md)',
   className = '',
   style = {},
   ...rest
 }: CategoryIconProps) {
-  const def = CATEGORIES[category] || CATEGORIES.other;
+  const iconName =
+    icon && icon in PATHS ? (icon as IconName) : CATEGORIES[category] || CATEGORIES.other;
   return (
     <span
       className={`sprout-cat ${className}`}
@@ -86,14 +83,14 @@ export function CategoryIcon({
         height: size,
         flexShrink: 0,
         borderRadius: radius,
-        background: def.bg,
-        fontSize: Math.round(size * 0.5),
+        background: 'var(--surface-hover)',
+        color: 'var(--text-muted)',
         lineHeight: 1,
         ...style,
       }}
       {...rest}
     >
-      {emoji || def.emoji}
+      <Icon name={iconName} size={Math.round(size * 0.5)} />
     </span>
   );
 }

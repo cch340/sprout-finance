@@ -3,14 +3,11 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Amount,
-  Badge,
   Button,
   CategoryIcon,
   Dialog,
 } from '../design-system';
-import type { BadgeTone } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
-import type { Tx } from '../domain/types';
 import { shortDate } from '../domain/format';
 
 /** A labelled value row in the detail sheet. */
@@ -34,10 +31,6 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
       </span>
     </div>
   );
-}
-
-function statusTone(s?: Tx['status']): BadgeTone {
-  return s === 'paid' ? 'income' : s === 'due' ? 'warning' : 'neutral';
 }
 
 export function EntryDetailDialog() {
@@ -65,7 +58,7 @@ export function EntryDetailDialog() {
 
   if (!open || !tx) return null;
 
-  const emoji = space?.cats.find((c) => c.key === tx.cat)?.emoji;
+  const icon = space?.cats.find((c) => c.key === tx.cat)?.icon;
   const catLabel = space?.cats.find((c) => c.key === tx.cat)?.label ?? tx.cat;
   const fieldRows = (space?.fields ?? [])
     .map((f) => ({ f, v: tx.fieldValues[f.key] }))
@@ -127,7 +120,7 @@ export function EntryDetailDialog() {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {/* headline: category tile + amount with direction */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
-          <CategoryIcon category={tx.cat} emoji={emoji} size={52} />
+          <CategoryIcon category={tx.cat} icon={icon} size={52} />
           <div style={{ minWidth: 0 }}>
             <Amount
               value={tx.amount}
@@ -170,13 +163,6 @@ export function EntryDetailDialog() {
           <DetailRow label="Paid from">{tx.payer || 'Unspecified'}</DetailRow>
         )}
         {tx.note && <DetailRow label="Note">{tx.note}</DetailRow>}
-        {tx.status && (
-          <DetailRow label="Status">
-            <Badge tone={statusTone(tx.status)} dot>
-              {tx.status === 'due' ? `Due ${shortDate(tx.date)}` : 'Paid'}
-            </Badge>
-          </DetailRow>
-        )}
       </div>
     </Dialog>
   );

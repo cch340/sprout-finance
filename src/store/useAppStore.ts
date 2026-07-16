@@ -6,9 +6,8 @@ import * as repo from '../data/repo';
 import type { RealtimeTable } from '../data/remote-repo';
 import { supabase } from '../data/supabase';
 import { clearCache, loadCache, saveCache } from '../data/db';
-import { findMirror, planEntryUpdate, resolvePaidFromFund } from '../domain/entry-links';
-import type { EntryEdit } from '../domain/entry-links';
 import { formatMoney, isoMonth } from '../domain/format';
+import { OTHER_CATEGORY } from '../domain/selectors';
 import { applyTheme, initTheme, nextTheme } from './theme';
 import {
   DEFAULT_HOUSEHOLD, DEFAULT_SETTINGS,
@@ -50,12 +49,18 @@ export interface NewEntryInput {
   fieldValues?: Record<string, string>;
   status?: Tx['status'];
   date?: string;
-  /**
-   * When set to a fund space's id, the entry is "paid from" that fund: a linked
-   * mirror `dir:'out'` tx is written into the fund's ledger so its balance drops
-   * by the same amount. Ignored if the id isn't a fund or is the entry's own space.
-   */
-  paidFromFundId?: string;
+}
+
+/** The editable fields carried by an entry edit (from AddEntryDialog). */
+export interface EntryEdit {
+  amount: number;
+  date: string;
+  cat: string;
+  fieldValues: Record<string, string>;
+  note: string;
+  dir: TxDir;
+  payer?: string;
+  title: string;
 }
 
 const TOAST_MS = 3200;
@@ -131,6 +136,17 @@ export interface AppState {
   carryForward: (drafts: Omit<Tx, 'id'>[]) => Promise<number>;
   addSpace: (space: Omit<Space, 'sortOrder'> & { sortOrder?: number }) => Promise<Space>;
   updateSpace: (id: string, patch: Partial<Space>) => Promise<void>;
+  /**
+   * Remove a custom field from a space and strip its now-orphaned value from
+   * every entry in that space, so deleted-field data doesn't linger in the DB
+   * (or resurface if a same-keyed field is later recreated).
+   */
+  deleteField: (spaceId: string, fieldKey: string) => Promise<void>;
+  /**
+   * Remove a category from a space and reassign its entries to the reserved
+   * "Other" fallback, so no entry keeps an orphaned category key.
+   */
+  deleteCategory: (spaceId: string, catKey: string) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
   addRecurring: (item: Omit<RecurringItem, 'id'>) => Promise<RecurringItem>;
   updateRecurring: (id: string, patch: Partial<RecurringItem>) => Promise<void>;
@@ -299,20 +315,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const title =
       input.title || fieldValues.vendor || input.note || input.cat || 'Entry';
     const date = input.date ?? new Date().toISOString().slice(0, 10);
-    const originId = repo.newId('tx');
-
-    // "Paid from a fund": mirror the spend as a fund withdrawal, linked to the
-    // origin so fund balance (base + in − out) reflects it. Guard against a fund
-    // paying from itself.
-    const fund = input.paidFromFundId
-      ? snapshot.spaces.find(
-          (s) => s.id === input.paidFromFundId && s.kind === 'fund' && s.id !== input.spaceId,
-        )
-      : undefined;
-    const linkId = fund ? originId : undefined;
 
     const tx: Tx = {
-      id: originId,
+      id: repo.newId('tx'),
       spaceId: input.spaceId,
       title,
       fieldValues,
@@ -323,28 +328,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       payer: space?.group === 'personal' ? undefined : input.payer ?? 'Joint',
       dir,
       status: input.status,
-      linkId,
-      linkSpaceId: fund?.id,
     };
-    const added: Tx[] = [tx];
-    if (fund) {
-      const mirror: Tx = {
-        id: repo.newId('tx'),
-        spaceId: fund.id,
-        title,
-        fieldValues: {},
-        note: `Paid from fund · ${space?.name ?? ''}`,
-        cat: fund.cats[0]?.key ?? 'other',
-        amount: input.amount,
-        date,
-        dir: 'out',
-        linkId,
-        linkSpaceId: input.spaceId,
-      };
-      added.unshift(mirror);
-    }
-    if (!(await guardWrite(get, () => repo.addTxs(added)))) return tx;
-    commitSnapshot(get, set, { txs: [...added, ...snapshot.txs] });
+    if (!(await guardWrite(get, () => repo.addTx(tx)))) return tx;
+    commitSnapshot(get, set, { txs: [tx, ...snapshot.txs] });
     const money = formatMoney(input.amount, { currency: snapshot.settings.currency });
     const sub = `${money} · ${title}`;
     get().showToast(dir === 'in' ? 'Income added' : 'Entry added', sub);
@@ -369,31 +355,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { snapshot } = get();
     const origin = snapshot.txs.find((t) => t.id === id);
     if (!origin) return;
-    const originSpace = snapshot.spaces.find((s) => s.id === origin.spaceId);
-    const mirror = findMirror(origin, snapshot.txs);
-    const fund = resolvePaidFromFund(edit.paidFromFundId, origin.spaceId, snapshot.spaces);
-    const plan = planEntryUpdate(
-      origin,
-      mirror,
-      edit,
-      originSpace?.name ?? '',
-      fund,
-      repo.newId('tx'),
-    );
-    if (!(await guardWrite(get, () => repo.applyEntryUpdate(id, plan.originPatch, plan.mirror)))) return;
-
-    // Reflect the same changes in the in-memory snapshot.
-    let txs = snapshot.txs.map((t) => (t.id === id ? { ...t, ...plan.originPatch } : t));
-    const m = plan.mirror;
-    if (m.kind === 'update' && m.id) {
-      txs = txs.map((t) => (t.id === m.id ? { ...t, ...m.patch } : t));
-    } else if (m.kind === 'delete' && m.id) {
-      txs = txs.filter((t) => t.id !== m.id);
-    } else if (m.kind === 'create' && m.create) {
-      if (m.removeId) txs = txs.filter((t) => t.id !== m.removeId);
-      txs = [m.create, ...txs];
-    }
-    commitSnapshot(get, set, { txs });
+    const patch: Partial<Tx> = {
+      amount: edit.amount,
+      date: edit.date,
+      cat: edit.cat,
+      fieldValues: edit.fieldValues,
+      note: edit.note,
+      dir: edit.dir,
+      payer: edit.payer,
+      title: edit.title,
+    };
+    if (!(await guardWrite(get, () => repo.updateTx(id, patch)))) return;
+    commitSnapshot(get, set, {
+      txs: snapshot.txs.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    });
     get().showToast('Entry updated', `${formatMoney(edit.amount, { currency: snapshot.settings.currency })} · ${edit.title}`);
   },
 
@@ -401,10 +376,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { snapshot } = get();
     const tx = snapshot.txs.find((t) => t.id === id);
     if (!tx) return;
-    const linked = findMirror(tx, snapshot.txs);
-    const ids = linked ? [id, linked.id] : [id];
-    if (!(await guardWrite(get, () => repo.deleteTxs(ids)))) return;
-    commitSnapshot(get, set, { txs: snapshot.txs.filter((t) => !ids.includes(t.id)) });
+    if (!(await guardWrite(get, () => repo.deleteTx(id)))) return;
+    commitSnapshot(get, set, { txs: snapshot.txs.filter((t) => t.id !== id) });
     get().showToast('Entry deleted');
   },
 
@@ -438,6 +411,59 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { snapshot } = get();
     commitSnapshot(get, set, {
       spaces: snapshot.spaces.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+    });
+  },
+
+  async deleteField(spaceId, fieldKey) {
+    const { snapshot } = get();
+    const space = snapshot.spaces.find((s) => s.id === spaceId);
+    if (!space) return;
+    const nextFields = space.fields.filter((f) => f.key !== fieldKey);
+    // Entries in this space that still carry a value under the removed key.
+    const stripped = snapshot.txs
+      .filter((t) => t.spaceId === spaceId && fieldKey in t.fieldValues)
+      .map((t) => {
+        const fieldValues = { ...t.fieldValues };
+        delete fieldValues[fieldKey];
+        return { id: t.id, fieldValues };
+      });
+    // Drop the field definition first, then clean up the orphaned values. If the
+    // value cleanup fails, the worst case is the pre-existing behaviour (values
+    // linger) rather than a field that renders empty cells.
+    const ok = await guardWrite(get, async () => {
+      await repo.updateSpace(spaceId, { fields: nextFields });
+      if (stripped.length > 0) await repo.updateTxsFieldValues(stripped);
+    });
+    if (!ok) return;
+    const strippedById = new Map(stripped.map((s) => [s.id, s.fieldValues]));
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) => (s.id === spaceId ? { ...s, fields: nextFields } : s)),
+      txs: snapshot.txs.map((t) =>
+        strippedById.has(t.id) ? { ...t, fieldValues: strippedById.get(t.id)! } : t,
+      ),
+    });
+  },
+
+  async deleteCategory(spaceId, catKey) {
+    if (catKey === OTHER_CATEGORY.key) return; // reserved virtual fallback — not deletable
+    const { snapshot } = get();
+    const space = snapshot.spaces.find((s) => s.id === spaceId);
+    if (!space) return;
+    const nextCats = space.cats.filter((c) => c.key !== catKey);
+    const affected = snapshot.txs.some((t) => t.spaceId === spaceId && t.cat === catKey);
+    // Drop the category first, then rehome its entries to "Other". A failure on
+    // the reassign leaves the pre-existing behaviour (orphaned key that already
+    // renders as "Other"), never a half-updated space.
+    const ok = await guardWrite(get, async () => {
+      await repo.updateSpace(spaceId, { cats: nextCats });
+      if (affected) await repo.reassignCategory(spaceId, catKey, OTHER_CATEGORY.key);
+    });
+    if (!ok) return;
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) => (s.id === spaceId ? { ...s, cats: nextCats } : s)),
+      txs: snapshot.txs.map((t) =>
+        t.spaceId === spaceId && t.cat === catKey ? { ...t, cat: OTHER_CATEGORY.key } : t,
+      ),
     });
   },
 

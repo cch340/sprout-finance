@@ -1,19 +1,20 @@
 import type { CSSProperties } from 'react';
+import { Icon, type IconName } from './Icon';
 
 /**
- * Curated set of category-appropriate emoji offered when creating a custom
- * category. Kept small and calm on purpose — no free-text emoji input.
+ * Curated set of category-appropriate icons offered when creating a custom
+ * category. Kept small and calm on purpose — no free-form icon input.
  */
-export const CATEGORY_EMOJI = [
-  '🏠', '🛒', '🍽️', '🚗', '👶', '⚡', '💧', '🌐',
-  '🧾', '🛍️', '💊', '🌱', '💵', '📱', '🎬', '✈️',
-  '🎁', '🐾', '📚', '🔧', '☕', '🏥',
-] as const;
+export const CATEGORY_ICONS: IconName[] = [
+  'home', 'shopping-cart', 'utensils', 'soup', 'car', 'baby', 'zap', 'droplet',
+  'globe', 'receipt', 'shopping-bag', 'pill', 'sprout', 'banknote', 'smartphone',
+  'film', 'plane', 'gift', 'paw-print', 'book-open', 'wrench', 'coffee', 'cross',
+];
 
-export interface CategoryEmojiPickerProps {
-  /** Currently selected emoji, or undefined for "none" (neutral fallback tile). */
-  value?: string;
-  onChange: (emoji: string | undefined) => void;
+export interface CategoryIconPickerProps {
+  /** Currently selected icon, or undefined for "none" (neutral fallback tile). */
+  value?: IconName;
+  onChange: (icon: IconName | undefined) => void;
   className?: string;
   style?: CSSProperties;
 }
@@ -33,7 +34,6 @@ function tileStyle(selected: boolean): CSSProperties {
     borderRadius: 'var(--radius-md)',
     border: 'none',
     background: 'var(--surface-hover)',
-    fontSize: Math.round(TILE * 0.5),
     lineHeight: 1,
     transition: 'box-shadow var(--dur-fast) var(--ease-standard)',
     boxShadow: selected ? '0 0 0 2px var(--accent)' : '0 0 0 1px var(--border-subtle)',
@@ -41,26 +41,26 @@ function tileStyle(selected: boolean): CSSProperties {
 }
 
 /**
- * CategoryEmojiPicker — a compact grid of curated category emoji plus a "none"
+ * CategoryIconPicker — a compact grid of curated category icons plus a "none"
  * option (falls back to the neutral keyed tile). The selected tile gets an
  * accent ring. Purely presentational; the parent owns the value.
  */
-export function CategoryEmojiPicker({
+export function CategoryIconPicker({
   value,
   onChange,
   className = '',
   style = {},
-}: CategoryEmojiPickerProps) {
+}: CategoryIconPickerProps) {
   return (
     <div
-      className={`sprout-emoji-picker ${className}`}
+      className={`sprout-icon-picker ${className}`}
       role="group"
-      aria-label="Category emoji"
+      aria-label="Category icon"
       style={{ display: 'flex', flexWrap: 'wrap', gap: 6, ...style }}
     >
       <button
         type="button"
-        aria-label="No emoji"
+        aria-label="No icon"
         aria-pressed={!value}
         onClick={() => onChange(undefined)}
         style={{
@@ -72,16 +72,19 @@ export function CategoryEmojiPicker({
       >
         None
       </button>
-      {CATEGORY_EMOJI.map((e) => (
+      {CATEGORY_ICONS.map((n) => (
         <button
-          key={e}
+          key={n}
           type="button"
-          aria-label={e}
-          aria-pressed={value === e}
-          onClick={() => onChange(e)}
-          style={tileStyle(value === e)}
+          aria-label={n}
+          aria-pressed={value === n}
+          onClick={() => onChange(n)}
+          style={{
+            ...tileStyle(value === n),
+            color: value === n ? 'var(--accent)' : 'var(--text-muted)',
+          }}
         >
-          {e}
+          <Icon name={n} size={17} />
         </button>
       ))}
     </div>

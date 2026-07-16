@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Badge,
   Button,
-  CategoryEmojiPicker,
   CategoryIcon,
+  CategoryIconPicker,
   Dialog,
   Icon,
   IconButton,
@@ -12,7 +12,9 @@ import {
   SegmentedControl,
   Tag,
 } from '../design-system';
+import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
+import { OTHER_CATEGORY } from '../domain/selectors';
 import type { Category, FieldDef, Space } from '../domain/types';
 
 function slug(s: string): string {
@@ -34,6 +36,9 @@ function FieldRow({
   onChange: (next: FieldDef) => void;
 }) {
   const [np, setNp] = useState('');
+  // Two-step delete: the X arms an inline confirm rather than removing at once,
+  // since removing a field also wipes its saved values from every entry.
+  const [confirming, setConfirming] = useState(false);
   // Inline rename — commits on blur/Enter. Only the display label changes;
   // the field's key (which entry values are stored under) stays stable.
   const [label, setLabel] = useState(field.label);
@@ -99,9 +104,39 @@ function FieldRow({
         {field.primary && <Badge tone="accent">title</Badge>}
         <Badge tone={isSelect ? 'accent' : 'neutral'}>{typeLabel}</Badge>
         {!field.primary && onRemove && (
-          <IconButton icon="x" label="Remove field" variant="ghost" size="sm" onClick={onRemove} />
+          <IconButton
+            icon="x"
+            label="Remove field"
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirming(true)}
+          />
         )}
       </div>
+      {confirming && onRemove && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+            Remove “{field.label}”? Its saved values on existing entries will be deleted too. This
+            can’t be undone.
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              variant="danger"
+              size="sm"
+              iconStart="trash"
+              onClick={() => {
+                setConfirming(false);
+                onRemove();
+              }}
+            >
+              Remove field
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       {opts.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {opts.map((o, i) => (
@@ -137,26 +172,32 @@ export function SpaceSettingsDialog() {
     | undefined;
   const close = useAppStore((s) => s.closeSpaceSettings);
   const updateSpace = useAppStore((s) => s.updateSpace);
+  const deleteField = useAppStore((s) => s.deleteField);
+  const deleteCategory = useAppStore((s) => s.deleteCategory);
   const deleteSpace = useAppStore((s) => s.deleteSpace);
+  const allTxs = useAppStore((s) => s.snapshot.txs);
   const showToast = useAppStore((s) => s.showToast);
   const navigate = useNavigate();
 
   const [section, setSection] = useState<'general' | 'categories' | 'fields'>('general');
   const [name, setName] = useState('');
   const [newCat, setNewCat] = useState('');
-  const [newEmoji, setNewEmoji] = useState<string | undefined>(undefined);
+  const [newIcon, setNewIcon] = useState<IconName | undefined>(undefined);
   const [newField, setNewField] = useState('');
   const [newFieldType, setNewFieldType] = useState<FieldDef['type']>('text');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Category pending deletion confirmation (its entries move to "Other").
+  const [confirmCat, setConfirmCat] = useState<string | null>(null);
 
   useEffect(() => {
     if (space) setName(space.name);
     setSection('general');
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
     setNewField('');
     setNewFieldType('text');
     setConfirmDelete(false);
+    setConfirmCat(null);
   }, [spaceId]);
 
   if (!spaceId || !space) return null;
@@ -173,17 +214,26 @@ export function SpaceSettingsDialog() {
     const label = newCat.trim();
     if (!label) return;
     const key = slug(label) || `cat-${cats.length}`;
-    if (!cats.some((c) => c.key === key)) {
-      const c: Category = newEmoji ? { key, label, emoji: newEmoji } : { key, label };
+    // 'other' is the reserved virtual fallback — it can't be created explicitly.
+    if (key !== OTHER_CATEGORY.key && !cats.some((c) => c.key === key)) {
+      const c: Category = newIcon ? { key, label, icon: newIcon } : { key, label };
       const next: Category[] = [...cats, c];
       void updateSpace(space.id, { cats: next });
     }
     setNewCat('');
-    setNewEmoji(undefined);
+    setNewIcon(undefined);
   };
-  const removeCat = (key: string) => {
-    void updateSpace(space.id, { cats: cats.filter((c) => c.key !== key) });
+  // Two-step delete: X arms confirmation; confirming moves the category's
+  // entries to "Other" (see store deleteCategory).
+  const confirmRemoveCat = () => {
+    if (!confirmCat) return;
+    void deleteCategory(space.id, confirmCat);
+    setConfirmCat(null);
   };
+  const confirmCatLabel = cats.find((c) => c.key === confirmCat)?.label ?? confirmCat;
+  const confirmCatCount = confirmCat
+    ? allTxs.filter((t) => t.spaceId === space.id && t.cat === confirmCat).length
+    : 0;
 
   const setFieldAt = (i: number, next: FieldDef) => {
     void updateSpace(space.id, { fields: fields.map((f, j) => (j === i ? next : f)) });
@@ -197,9 +247,6 @@ export function SpaceSettingsDialog() {
     void updateSpace(space.id, { fields: [...fields, field] });
     setNewField('');
     setNewFieldType('text');
-  };
-  const removeField = (i: number) => {
-    void updateSpace(space.id, { fields: fields.filter((_, j) => j !== i) });
   };
 
   const doDelete = async () => {
@@ -301,10 +348,10 @@ export function SpaceSettingsDialog() {
             {cats.length > 0 && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {cats.map((c) => (
-                  <Tag key={c.key} onRemove={() => removeCat(c.key)}>
+                  <Tag key={c.key} onRemove={() => setConfirmCat(c.key)}>
                     <CategoryIcon
                       category={c.key}
-                      emoji={c.emoji}
+                      icon={c.icon}
                       size={18}
                       radius="var(--radius-xs)"
                       style={{ marginRight: 4 }}
@@ -312,6 +359,33 @@ export function SpaceSettingsDialog() {
                     {c.label}
                   </Tag>
                 ))}
+              </div>
+            )}
+            {confirmCat && (
+              <div
+                style={{
+                  padding: '10px 12px',
+                  background: 'var(--surface-sunken)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-2)',
+                }}
+              >
+                <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
+                  Delete “{confirmCatLabel}”?{' '}
+                  {confirmCatCount > 0
+                    ? `${confirmCatCount} ${confirmCatCount === 1 ? 'entry' : 'entries'} will move to “Other”.`
+                    : 'It has no entries.'}
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="danger" size="sm" iconStart="trash" onClick={confirmRemoveCat}>
+                    Delete category
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmCat(null)}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
@@ -327,7 +401,7 @@ export function SpaceSettingsDialog() {
                 Add
               </Button>
             </div>
-            <CategoryEmojiPicker value={newEmoji} onChange={setNewEmoji} />
+            <CategoryIconPicker value={newIcon} onChange={setNewIcon} />
           </div>
         )}
 
@@ -345,7 +419,7 @@ export function SpaceSettingsDialog() {
                 <FieldRow
                   key={f.key + i}
                   field={f}
-                  onRemove={f.primary ? undefined : () => removeField(i)}
+                  onRemove={f.primary ? undefined : () => void deleteField(space.id, f.key)}
                   onChange={(next) => setFieldAt(i, next)}
                 />
               ))}

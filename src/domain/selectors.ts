@@ -2,8 +2,28 @@
 // (data, args) => value with no side effects. Month args are ISO 'yyyy-mm'.
 // Semantics mirror the prototype's data.js exactly, parameterized by month.
 
-import type { RecurringItem, Snapshot, Space, Tx } from './types';
+import type { Category, RecurringItem, Snapshot, Space, Tx } from './types';
 import { isoMonth, monthShort } from './format';
+
+/**
+ * Reserved fallback category. It is virtual — never stored in a space's `cats`
+ * nor written as a DB row — and always available for selection/filtering. Any
+ * entry whose `cat` isn't one of its space's categories (e.g. after that
+ * category was deleted) is treated as "Other".
+ */
+export const OTHER_CATEGORY: Category = { key: 'other', label: 'Other' };
+
+/** A space's own categories followed by the reserved virtual "Other". */
+export function categoriesWithOther(space: Pick<Space, 'cats'>): Category[] {
+  return space.cats.some((c) => c.key === OTHER_CATEGORY.key)
+    ? space.cats
+    : [...space.cats, OTHER_CATEGORY];
+}
+
+/** Map a tx's category key to one the space defines, else the "Other" key. */
+export function resolveCatKey(space: Pick<Space, 'cats'>, catKey: string): string {
+  return space.cats.some((c) => c.key === catKey) ? catKey : OTHER_CATEGORY.key;
+}
 
 const inMonth = (t: Tx, month: string): boolean => t.date.slice(0, 7) === month;
 
@@ -24,8 +44,9 @@ export function spendSpaces(spaces: Space[]): Space[] {
 /**
  * spentOf — sum of non-income tx for a space in a month. For fund spaces a
  * `dir:'out'` movement is a transfer, not spending, so it contributes 0.
+ * Omit `month` to total across all months ("all time").
  */
-export function spentOf(space: Space, txs: Tx[], month: string): number {
+export function spentOf(space: Space, txs: Tx[], month?: string): number {
   return spaceTxs(space.id, txs, month)
     .filter((t) => t.dir !== 'in')
     .reduce((sum, t) => sum + (t.dir === 'out' && space.kind === 'fund' ? 0 : t.amount), 0);
@@ -81,8 +102,8 @@ export interface CategorySpend {
   cat: string;
   label: string;
   value: number;
-  /** Explicit custom emoji if the category defines one; else undefined. */
-  emoji?: string;
+  /** Explicit custom icon if the category defines one; else undefined. */
+  icon?: string;
 }
 
 /** Top spending categories across shared spend spaces (default top 5). */
@@ -101,29 +122,29 @@ export function topCategories(
       if (cur) cur.value += t.amount;
       else {
         const d = defOf(t.cat);
-        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, icon: d?.icon });
       }
     }
   }
   return [...agg.values()].sort((a, b) => b.value - a.value).slice(0, limit);
 }
 
-/** Income = sum of dir:'in' tx in a personal space for the month. */
-export function incomeOf(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Income = sum of dir:'in' tx in a personal space for the month (all months if omitted). */
+export function incomeOf(personalSpaceId: string, txs: Tx[], month?: string): number {
   return spaceTxs(personalSpaceId, txs, month)
     .filter((t) => t.dir === 'in')
     .reduce((s, t) => s + t.amount, 0);
 }
 
-/** Spent = sum of dir:'out' tx in a personal space for the month. */
-export function spentOfPersonal(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Spent = sum of dir:'out' tx in a personal space for the month (all months if omitted). */
+export function spentOfPersonal(personalSpaceId: string, txs: Tx[], month?: string): number {
   return spaceTxs(personalSpaceId, txs, month)
     .filter((t) => t.dir === 'out')
     .reduce((s, t) => s + t.amount, 0);
 }
 
-/** Income − spent for a personal space in the month. */
-export function leftThisMonth(personalSpaceId: string, txs: Tx[], month: string): number {
+/** Income − spent for a personal space in the month (all months if omitted). */
+export function leftThisMonth(personalSpaceId: string, txs: Tx[], month?: string): number {
   return incomeOf(personalSpaceId, txs, month) - spentOfPersonal(personalSpaceId, txs, month);
 }
 
@@ -252,7 +273,7 @@ export function topCategoriesRange(
       if (cur) cur.value += t.amount;
       else {
         const d = defOf(t.cat);
-        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, emoji: d?.emoji });
+        agg.set(t.cat, { cat: t.cat, label: d?.label ?? t.cat, value: t.amount, icon: d?.icon });
       }
     }
   }
@@ -265,12 +286,12 @@ export function secondaryFields(space: Space) {
 }
 
 /**
- * Resolve a category's explicit custom emoji (if the user picked one) for a tx
+ * Resolve a category's explicit custom icon (if the user picked one) for a tx
  * in a given space. Returns undefined so CategoryIcon falls back to its keyed
- * glyph / neutral tile.
+ * icon / neutral tile.
  */
-export function catEmojiOf(spaces: Space[], spaceId: string, catKey: string): string | undefined {
-  return spaces.find((s) => s.id === spaceId)?.cats.find((c) => c.key === catKey)?.emoji || undefined;
+export function catIconOf(spaces: Space[], spaceId: string, catKey: string): string | undefined {
+  return spaces.find((s) => s.id === spaceId)?.cats.find((c) => c.key === catKey)?.icon || undefined;
 }
 
 /** Number of ledger entries for a space (optionally scoped to a month). */

@@ -10,7 +10,7 @@
 
 import { DEFAULT_SETTINGS, HOUSEHOLD_ID } from '../domain/types';
 import type {
-  Category, FieldDef, Household, RecurringItem, Settings, Snapshot, Space, SpaceKind, Tx, TxDir, TxStatus,
+  Category, FieldDef, Household, RecurringItem, Settings, Snapshot, Space, SpaceKind, Tx, TxDir,
 } from '../domain/types';
 
 // ---- scoped categories & fields (verbatim from data.js) ------------------
@@ -132,7 +132,7 @@ const RECURRING_SRC: Array<Omit<RecurringItem, 'id'>> = [
 // ---- current-month ledger (day numbers map onto the real current month) ---
 interface SrcTx {
   spaceId: string; day: number; vendor: string; note: string; cat: string; amount: number;
-  dir?: TxDir; payer?: string; status?: TxStatus; fields?: Record<string, string>;
+  dir?: TxDir; payer?: string; fields?: Record<string, string>;
 }
 
 const CURRENT_TX: SrcTx[] = [
@@ -145,16 +145,16 @@ const CURRENT_TX: SrcTx[] = [
   { spaceId: 'expenses', day: 7, vendor: 'Lotus', note: '2 weeks grocery', cat: 'grocery', amount: 264.2, payer: 'Joint', fields: { location: 'Bayan Baru' } },
   { spaceId: 'expenses', day: 5, vendor: 'Jalan Jalan Japan', note: 'Leo clothes', cat: 'shopping', amount: 62, payer: 'CH', fields: { location: 'Queensbay' } },
   // Housing
-  { spaceId: 'housing', day: 1, vendor: 'House installment', note: 'Monthly', cat: 'installment', amount: 1450, payer: 'Joint', status: 'paid', fields: { provider: 'Maybank' } },
-  { spaceId: 'housing', day: 28, vendor: 'Electric Bill · Jun', note: '', cat: 'electric', amount: 186, payer: 'JC', status: 'due', fields: { provider: 'TNB' } },
-  { spaceId: 'housing', day: 30, vendor: 'Water Bill · May–Jun', note: '', cat: 'water', amount: 62.4, payer: 'Joint', status: 'due', fields: { provider: 'PBAPP' } },
-  { spaceId: 'housing', day: 5, vendor: 'Internet', note: '500 Mbps', cat: 'internet', amount: 159, payer: 'CH', status: 'paid', fields: { provider: 'Time Fibre' } },
-  { spaceId: 'housing', day: 6, vendor: 'Air Purifier filter', note: 'Replacement', cat: 'appliance', amount: 120, payer: 'Joint', status: 'paid', fields: { provider: 'LG' } },
+  { spaceId: 'housing', day: 1, vendor: 'House installment', note: 'Monthly', cat: 'installment', amount: 1450, payer: 'Joint', fields: { provider: 'Maybank' } },
+  { spaceId: 'housing', day: 28, vendor: 'Electric Bill · Jun', note: '', cat: 'electric', amount: 186, payer: 'JC', fields: { provider: 'TNB' } },
+  { spaceId: 'housing', day: 30, vendor: 'Water Bill · May–Jun', note: '', cat: 'water', amount: 62.4, payer: 'Joint', fields: { provider: 'PBAPP' } },
+  { spaceId: 'housing', day: 5, vendor: 'Internet', note: '500 Mbps', cat: 'internet', amount: 159, payer: 'CH', fields: { provider: 'Time Fibre' } },
+  { spaceId: 'housing', day: 6, vendor: 'Air Purifier filter', note: 'Replacement', cat: 'appliance', amount: 120, payer: 'Joint', fields: { provider: 'LG' } },
   // Car
-  { spaceId: 'car', day: 10, vendor: 'Myvi loan · PQC 9059', note: 'Monthly installment', cat: 'installment', amount: 545, payer: 'JC', status: 'paid', fields: { workshop: 'Maybank' } },
-  { spaceId: 'car', day: 18, vendor: 'Alza service', note: 'Maintenance', cat: 'maintenance', amount: 235, payer: 'JC', status: 'paid', fields: { workshop: 'Perodua SC' } },
+  { spaceId: 'car', day: 10, vendor: 'Myvi loan · PQC 9059', note: 'Monthly installment', cat: 'installment', amount: 545, payer: 'JC', fields: { workshop: 'Maybank' } },
+  { spaceId: 'car', day: 18, vendor: 'Alza service', note: 'Maintenance', cat: 'maintenance', amount: 235, payer: 'JC', fields: { workshop: 'Perodua SC' } },
   // Investment
-  { spaceId: 'investment', day: 15, vendor: 'AIA contribution', note: 'Monthly', cat: 'investment', amount: 300, payer: 'Joint', status: 'paid', fields: { platform: 'AIA' } },
+  { spaceId: 'investment', day: 15, vendor: 'AIA contribution', note: 'Monthly', cat: 'investment', amount: 300, payer: 'Joint', fields: { platform: 'AIA' } },
   // Joint Fund
   { spaceId: 'joint', day: 1, vendor: 'JC contribution', note: 'Monthly top-up', cat: 'joint', amount: 1500, payer: 'JC', dir: 'in' },
   { spaceId: 'joint', day: 1, vendor: 'CH contribution', note: 'Monthly top-up', cat: 'joint', amount: 1500, payer: 'CH', dir: 'in' },
@@ -225,7 +225,6 @@ export function buildSeed(ref: Date = new Date()): Snapshot {
       date: isoFor(curYear, curMonth0, s.day),
       payer: s.payer,
       dir: s.dir ?? 'out',
-      status: s.status,
     });
   }
 

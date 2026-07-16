@@ -11,7 +11,7 @@ import { SETTINGS_ID } from '../domain/types';
 import type {
   Household, Person, RecurringItem, Settings, Snapshot, Space, Tx,
 } from '../domain/types';
-import type { MirrorAction } from '../domain/entry-links';
+import { migrateLegacyCategory } from '../domain/legacy-emoji';
 
 // ---- current household context -------------------------------------------
 let currentHouseholdId: string | null = null;
@@ -52,6 +52,7 @@ interface TxRow {
 }
 interface RecurringRow {
   household_id: string; id: string; space_id: string; label: string; cat: string; amount: number;
+  remark: string | null;
 }
 interface SettingsRow {
   household_id: string; theme: Settings['theme']; bill_reminders: boolean;
@@ -61,7 +62,9 @@ interface SettingsRow {
 function toSpace(r: SpaceRow): Space {
   return {
     id: r.id, name: r.name, short: r.short ?? undefined, sub: r.sub ?? undefined,
-    group: r.grp, icon: r.icon, kind: r.kind, cats: r.cats ?? [], fields: r.fields ?? [],
+    group: r.grp, icon: r.icon, kind: r.kind,
+    // Normalize any category persisted with the legacy `emoji` field to `icon`.
+    cats: (r.cats ?? []).map(migrateLegacyCategory), fields: r.fields ?? [],
     budget: r.budget ?? undefined, baseBalance: r.base_balance ?? undefined,
     value: r.value ?? undefined, sortOrder: r.sort_order,
   };
@@ -75,7 +78,7 @@ function toTx(r: TxRow): Tx {
   };
 }
 function toRecurring(r: RecurringRow): RecurringItem {
-  return { id: r.id, spaceId: r.space_id, label: r.label, cat: r.cat, amount: r.amount };
+  return { id: r.id, spaceId: r.space_id, label: r.label, cat: r.cat, amount: r.amount, remark: r.remark ?? undefined };
 }
 
 // ---- mappers: domain → row (full insert) ---------------------------------
@@ -96,7 +99,7 @@ function txRow(t: Tx): TxRow {
   };
 }
 function recurringRow(r: RecurringItem): RecurringRow {
-  return { household_id: hid(), id: r.id, space_id: r.spaceId, label: r.label, cat: r.cat, amount: r.amount };
+  return { household_id: hid(), id: r.id, space_id: r.spaceId, label: r.label, cat: r.cat, amount: r.amount, remark: r.remark ?? null };
 }
 
 // ---- mappers: partial patch → row columns --------------------------------
@@ -233,23 +236,22 @@ export async function deleteTxs(ids: string[]): Promise<void> {
   must(await supabase.from('txs').delete().eq('household_id', hid()).in('id', ids));
 }
 /**
- * Apply an entry edit: patch the origin tx and reconcile its fund mirror
- * (create / update / delete / none). Mixed ops → sequential calls.
+ * Rewrite the `field_values` map on a batch of entries — used when a custom
+ * field is deleted, to strip its now-orphaned value from every entry that
+ * carried one. Each entry needs its own value, so these go as parallel updates.
  */
-export async function applyEntryUpdate(
-  originId: string,
-  originPatch: Partial<Tx>,
-  mirror: MirrorAction,
+export async function updateTxsFieldValues(
+  updates: { id: string; fieldValues: Record<string, string> }[],
 ): Promise<void> {
-  await updateTx(originId, originPatch);
-  if (mirror.kind === 'update' && mirror.id) {
-    await updateTx(mirror.id, mirror.patch ?? {});
-  } else if (mirror.kind === 'delete' && mirror.id) {
-    await deleteTx(mirror.id);
-  } else if (mirror.kind === 'create' && mirror.create) {
-    if (mirror.removeId) await deleteTx(mirror.removeId);
-    await addTx(mirror.create);
-  }
+  await Promise.all(updates.map((u) => updateTx(u.id, { fieldValues: u.fieldValues })));
+}
+/**
+ * Move every entry in a space that uses `fromCat` onto `toCat` in one write —
+ * used when a category is deleted so its entries fall back to "Other" instead
+ * of keeping an orphaned key.
+ */
+export async function reassignCategory(spaceId: string, fromCat: string, toCat: string): Promise<void> {
+  must(await supabase.from('txs').update({ cat: toCat }).eq('household_id', hid()).eq('space_id', spaceId).eq('cat', fromCat));
 }
 
 // ---- spaces --------------------------------------------------------------
@@ -277,6 +279,7 @@ export async function updateRecurring(id: string, patch: Partial<RecurringItem>)
   if ('label' in patch) o.label = patch.label;
   if ('cat' in patch) o.cat = patch.cat;
   if ('amount' in patch) o.amount = patch.amount;
+  if ('remark' in patch) o.remark = patch.remark ?? null;
   must(await supabase.from('recurring').update(o).eq('household_id', hid()).eq('id', id));
 }
 export async function deleteRecurring(id: string): Promise<void> {

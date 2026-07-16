@@ -154,7 +154,6 @@ export function CarryForwardDialog({
           date: `${targetMonth}-${String(day).padStart(2, '0')}`,
           payer: t.payer,
           dir: t.dir,
-          status: t.status,
         };
       });
     const n = await carryForward(drafts);
@@ -244,7 +243,7 @@ export function CarryForwardDialog({
                 }}
               >
                 <Checkbox checked={on} onChange={() => toggle(t.id)} disabled={sameMonth} />
-                <CategoryIcon category={t.cat} emoji={space.cats.find((c) => c.key === t.cat)?.emoji} size={32} />
+                <CategoryIcon category={t.cat} icon={space.cats.find((c) => c.key === t.cat)?.icon} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ font: 'var(--font-label)', color: 'var(--text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {t.title}

@@ -52,6 +52,21 @@ function GroupLabel({ children }: { children: string }) {
   );
 }
 
+function SubLabel({ children }: { children: string }) {
+  return (
+    <div
+      style={{
+        font: 'var(--font-caption)',
+        fontWeight: 'var(--fw-semibold)',
+        color: 'var(--text-subtle)',
+        margin: '0 4px 6px',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function budgetMeta(space: Space, spent: number) {
   const budget = space.budget ?? 0;
   const pct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
@@ -98,46 +113,61 @@ function SpacesBody() {
     .filter((s) => s.kind === 'personal')
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Group shared spaces by kind so each group's amounts mean one thing
+  // (spent vs balance vs value). Empty groups don't render; the sub-labels
+  // only appear once there is more than one group to tell apart.
+  const sharedGroups = [
+    { label: 'Spending', list: shared.filter((s) => s.kind !== 'fund' && s.kind !== 'invest') },
+    { label: 'Funds & savings', list: shared.filter((s) => s.kind === 'fund') },
+    { label: 'Investments', list: shared.filter((s) => s.kind === 'invest') },
+  ].filter((g) => g.list.length > 0);
+  const showSubLabels = sharedGroups.length > 1;
+
+  const sharedRow = (s: Space, i: number, len: number) => {
+    const spent = spentOf(s, txs, month);
+    const value =
+      s.kind === 'fund' ? fundBalance(s, txs) : s.kind === 'invest' ? s.value ?? 0 : spent;
+    const isBalance = s.kind === 'fund' || s.kind === 'invest';
+    const meta =
+      s.kind === 'spend' && s.budget
+        ? budgetMeta(s, spent)
+        : s.kind === 'fund'
+          ? 'balance'
+          : s.kind === 'invest'
+            ? 'value'
+            : 'this month';
+    return (
+      <ListRow
+        key={s.id}
+        leading={tile(s.icon as IconName)}
+        title={s.name}
+        subtitle={s.sub ?? `${entryCount(s.id, txs, month)} entries`}
+        trailing={<Amount value={value} style={isBalance ? SAGE : undefined} />}
+        meta={meta}
+        chevron
+        onClick={() => navigate(`/spaces/${s.id}`)}
+        divider={i < len - 1}
+      />
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div>
         <GroupLabel>Shared</GroupLabel>
-        <Card padding="sm">
-          {shared.length === 0 && (
+        {sharedGroups.length === 0 && (
+          <Card padding="sm">
             <ListRow title="No shared spaces yet" subtitle="Create one to start tracking" />
-          )}
-          {shared.map((s, i) => {
-            const budgeted = s.kind === 'spend' && !!s.budget;
-            const spent = spentOf(s, txs, month);
-            const value =
-              s.kind === 'fund'
-                ? fundBalance(s, txs)
-                : s.kind === 'invest'
-                  ? s.value ?? 0
-                  : spent;
-            const isBalance = s.kind === 'fund' || s.kind === 'invest';
-            const meta = budgeted
-              ? budgetMeta(s, spent)
-              : s.kind === 'fund'
-                ? 'balance'
-                : s.kind === 'invest'
-                  ? 'value'
-                  : 'this month';
-            return (
-              <ListRow
-                key={s.id}
-                leading={tile(s.icon as IconName)}
-                title={s.name}
-                subtitle={s.sub ?? `${entryCount(s.id, txs, month)} entries`}
-                trailing={<Amount value={value} style={isBalance ? SAGE : undefined} />}
-                meta={meta}
-                chevron
-                onClick={() => navigate(`/spaces/${s.id}`)}
-                divider={i < shared.length - 1}
-              />
-            );
-          })}
-        </Card>
+          </Card>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          {sharedGroups.map((g) => (
+            <div key={g.label}>
+              {showSubLabels && <SubLabel>{g.label}</SubLabel>}
+              <Card padding="sm">{g.list.map((s, i) => sharedRow(s, i, g.list.length))}</Card>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div>
