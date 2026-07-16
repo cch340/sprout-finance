@@ -7,7 +7,7 @@ import type { RealtimeTable } from '../data/remote-repo';
 import { supabase } from '../data/supabase';
 import { clearCache, loadCache, saveCache } from '../data/db';
 import { formatMoney, isoMonth } from '../domain/format';
-import { OTHER_CATEGORY } from '../domain/selectors';
+import { OTHER_CATEGORY, reorderedSortValues } from '../domain/selectors';
 import { applyTheme, initTheme, nextTheme } from './theme';
 import {
   DEFAULT_HOUSEHOLD, DEFAULT_SETTINGS,
@@ -136,6 +136,12 @@ export interface AppState {
   carryForward: (drafts: Omit<Tx, 'id'>[]) => Promise<number>;
   addSpace: (space: Omit<Space, 'sortOrder'> & { sortOrder?: number }) => Promise<Space>;
   updateSpace: (id: string, patch: Partial<Space>) => Promise<void>;
+  /**
+   * Persist a new order for a set of spaces (typically one on-screen group).
+   * `orderedIds` is the desired visual order; the spaces' existing `sortOrder`
+   * slots are permuted among them, so other spaces' ordering is untouched.
+   */
+  reorderSpaces: (orderedIds: string[]) => Promise<void>;
   /**
    * Remove a custom field from a space and strip its now-orphaned value from
    * every entry in that space, so deleted-field data doesn't linger in the DB
@@ -411,6 +417,33 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { snapshot } = get();
     commitSnapshot(get, set, {
       spaces: snapshot.spaces.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+    });
+  },
+
+  async reorderSpaces(orderedIds) {
+    const { snapshot } = get();
+    const byId = new Map(snapshot.spaces.map((s) => [s.id, s]));
+    const ordered = orderedIds
+      .map((id) => byId.get(id))
+      .filter((s): s is Space => Boolean(s));
+    if (ordered.length < 2) return;
+    // Reuse the exact sortOrder values these spaces already occupy, re-handed out
+    // in the new visual order. This keeps their interleaving with spaces in other
+    // groups intact — only relative order within the set changes.
+    const nextSlots = reorderedSortValues(ordered);
+    const changed = ordered
+      .map((s) => ({ id: s.id, sortOrder: nextSlots.get(s.id)! }))
+      .filter((c, i) => c.sortOrder !== ordered[i].sortOrder);
+    if (changed.length === 0) return;
+    const ok = await guardWrite(get, async () => {
+      await Promise.all(changed.map((c) => repo.updateSpace(c.id, { sortOrder: c.sortOrder })));
+    });
+    if (!ok) return;
+    const nextById = new Map(changed.map((c) => [c.id, c.sortOrder]));
+    commitSnapshot(get, set, {
+      spaces: snapshot.spaces.map((s) =>
+        nextById.has(s.id) ? { ...s, sortOrder: nextById.get(s.id)! } : s,
+      ),
     });
   },
 
