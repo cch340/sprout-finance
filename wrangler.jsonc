@@ -2,6 +2,11 @@
   // Cloudflare Workers config: serve the built PWA as a static-assets Worker.
   "name": "sprout-finance",
   "compatibility_date": "2026-07-01",
+  // Keep per-version preview URLs on so non-production branch builds get a
+  // stable, shareable preview link (and PR comments). Preview builds share the
+  // same Supabase project/config as production — there are no separate preview
+  // bindings — so treat preview URLs as touching live data.
+  "preview_urls": true,
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"
