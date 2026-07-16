@@ -1,7 +1,25 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Amount, Avatar, Button, Card, Icon, ListRow } from '../design-system';
-import type { IconName } from '../design-system';
+import type { IconName, ListRowProps } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Space } from '../domain/types';
 import {
@@ -15,6 +33,97 @@ import { monthLabel } from '../domain/format';
 import { useIsDesktop } from '../shell/useIsDesktop';
 
 const SAGE: CSSProperties = { color: 'var(--sage-700)' };
+
+/**
+ * A ListRow that can be dragged to reorder within its group. The drag grip is a
+ * dedicated handle so the row body stays tappable for navigation; the row moves
+ * only when the handle is dragged (mouse) or long-pressed (touch).
+ */
+function SortableSpaceRow({ id, leading, ...row }: ListRowProps & { id: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    position: 'relative',
+    zIndex: isDragging ? 1 : undefined,
+    opacity: isDragging ? 0.7 : 1,
+    background: isDragging ? 'var(--surface-hover)' : undefined,
+    borderRadius: 'var(--radius-md)',
+  };
+  const grip = (
+    <button
+      type="button"
+      aria-label="Drag to reorder"
+      {...attributes}
+      {...listeners}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 4,
+        margin: '-4px 0',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--text-subtle)',
+        cursor: 'grab',
+        touchAction: 'none',
+        flexShrink: 0,
+      }}
+    >
+      <Icon name="grip-vertical" size={18} />
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ListRow
+        {...row}
+        leading={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {grip}
+            {leading}
+          </span>
+        }
+      />
+    </div>
+  );
+}
+
+/** A Card whose child rows can be reordered via drag-and-drop. */
+function DraggableCard({
+  ids,
+  onReorder,
+  children,
+}: {
+  ids: string[];
+  onReorder: (ids: string[]) => void;
+  children: ReactNode;
+}) {
+  // Mouse: a small drag distance activates immediately. Touch: a short press-and-
+  // hold (long-press) activates, so ordinary vertical swipes still scroll the list.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+    onReorder(arrayMove(ids, from, to));
+  };
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <Card padding="sm">{children}</Card>
+      </SortableContext>
+    </DndContext>
+  );
+}
 
 function tile(icon: IconName) {
   return (
@@ -104,6 +213,7 @@ function SpacesBody() {
   const navigate = useNavigate();
   const snapshot = useAppStore((s) => s.snapshot);
   const month = useAppStore((s) => s.month);
+  const reorderSpaces = useAppStore((s) => s.reorderSpaces);
   const { spaces, txs } = snapshot;
 
   const shared = spaces
@@ -137,8 +247,9 @@ function SpacesBody() {
             ? 'value'
             : 'this month';
     return (
-      <ListRow
+      <SortableSpaceRow
         key={s.id}
+        id={s.id}
         leading={tile(s.icon as IconName)}
         title={s.name}
         subtitle={s.sub ?? `${entryCount(s.id, txs, month)} entries`}
@@ -164,7 +275,9 @@ function SpacesBody() {
           {sharedGroups.map((g) => (
             <div key={g.label}>
               {showSubLabels && <SubLabel>{g.label}</SubLabel>}
-              <Card padding="sm">{g.list.map((s, i) => sharedRow(s, i, g.list.length))}</Card>
+              <DraggableCard ids={g.list.map((s) => s.id)} onReorder={reorderSpaces}>
+                {g.list.map((s, i) => sharedRow(s, i, g.list.length))}
+              </DraggableCard>
             </div>
           ))}
         </div>
@@ -172,24 +285,28 @@ function SpacesBody() {
 
       <div>
         <GroupLabel>Personal</GroupLabel>
-        <Card padding="sm">
-          {personal.length === 0 && (
+        {personal.length === 0 ? (
+          <Card padding="sm">
             <ListRow title="No personal spaces yet" subtitle="Add people during onboarding" />
-          )}
-          {personal.map((p, i) => (
-            <ListRow
-              key={p.id}
-              leading={<Avatar name={p.name} size={40} />}
-              title={`${p.name} · Personal`}
-              subtitle={`Income RM ${incomeOf(p.id, txs, month).toLocaleString()}`}
-              trailing={<Amount value={spentOfPersonal(p.id, txs, month)} />}
-              meta="spent"
-              chevron
-              onClick={() => navigate(`/personal/${p.id}`)}
-              divider={i < personal.length - 1}
-            />
-          ))}
-        </Card>
+          </Card>
+        ) : (
+          <DraggableCard ids={personal.map((p) => p.id)} onReorder={reorderSpaces}>
+            {personal.map((p, i) => (
+              <SortableSpaceRow
+                key={p.id}
+                id={p.id}
+                leading={<Avatar name={p.name} size={40} />}
+                title={`${p.name} · Personal`}
+                subtitle={`Income RM ${incomeOf(p.id, txs, month).toLocaleString()}`}
+                trailing={<Amount value={spentOfPersonal(p.id, txs, month)} />}
+                meta="spent"
+                chevron
+                onClick={() => navigate(`/personal/${p.id}`)}
+                divider={i < personal.length - 1}
+              />
+            ))}
+          </DraggableCard>
+        )}
       </div>
     </div>
   );

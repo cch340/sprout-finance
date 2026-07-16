@@ -304,6 +304,20 @@ export function recurringTotal(spaceId: string, recurring: RecurringItem[]): num
   return recurring.filter((r) => r.spaceId === spaceId).reduce((s, r) => s + r.amount, 0);
 }
 
+/**
+ * Reorder helper: given spaces already in their desired visual order, return the
+ * `sortOrder` each should take. The values handed out are exactly the ones these
+ * spaces already occupy (their own slots), re-assigned ascending down the new
+ * order — so their interleaving with spaces outside the set is left untouched and
+ * only the relative order within the set changes.
+ */
+export function reorderedSortValues(
+  ordered: { id: string; sortOrder: number }[],
+): Map<string, number> {
+  const slots = ordered.map((s) => s.sortOrder).sort((a, b) => a - b);
+  return new Map(ordered.map((s, i) => [s.id, slots[i]]));
+}
+
 // ---- snapshot-scoped convenience wrappers --------------------------------
 // Thin helpers that read straight off a Snapshot for the common current-month
 // case; views can use these or the parameterized forms above.

@@ -3,7 +3,7 @@ import { buildSeed } from '../data/seed-demo';
 import { isoMonth } from './format';
 import {
   categoriesWithOther, fundBalance, history, incomeOf, leftThisMonth, monthsInRange,
-  OTHER_CATEGORY, payerSpaceBreakdown, resolveCatKey, spendByPerson,
+  OTHER_CATEGORY, payerSpaceBreakdown, reorderedSortValues, resolveCatKey, spendByPerson,
   spendByPersonRange, spendBySpaceRange, spentOf, spentOfPersonal, topCategories,
   topCategoriesRange, totalBudget, totalSpent, UNSPECIFIED,
 } from './selectors';
@@ -229,5 +229,45 @@ describe('range-aware reports selectors', () => {
     for (const r of rows) expect(r.value).toBeGreaterThan(0);
     // JC's current-month total across spaces matches spendByPerson.JC (966).
     expect(rows.reduce((a, r) => a + r.value, 0)).toBeCloseTo(966, 2);
+  });
+});
+
+describe('reorderedSortValues', () => {
+  it('re-hands out the same slots down the new visual order', () => {
+    // A,B,C currently occupy slots 2,5,9. Drag C to the front → C,A,B.
+    const next = reorderedSortValues([
+      { id: 'c', sortOrder: 9 },
+      { id: 'a', sortOrder: 2 },
+      { id: 'b', sortOrder: 5 },
+    ]);
+    // The pool of slots is preserved; the leading item gets the smallest.
+    expect(next.get('c')).toBe(2);
+    expect(next.get('a')).toBe(5);
+    expect(next.get('b')).toBe(9);
+    // Sorting the set by its new sortOrder reproduces the requested order.
+    const order = [...next.entries()].sort((x, y) => x[1] - y[1]).map(([id]) => id);
+    expect(order).toEqual(['c', 'a', 'b']);
+  });
+
+  it('only the moved items differ; untouched order is a no-op', () => {
+    const same = reorderedSortValues([
+      { id: 'a', sortOrder: 2 },
+      { id: 'b', sortOrder: 5 },
+      { id: 'c', sortOrder: 9 },
+    ]);
+    expect(same.get('a')).toBe(2);
+    expect(same.get('b')).toBe(5);
+    expect(same.get('c')).toBe(9);
+  });
+
+  it('preserves interleaving with spaces outside the reordered set', () => {
+    // Only the odd-slotted group {1,3,5} is reordered; even slots stay free.
+    const next = reorderedSortValues([
+      { id: 'z', sortOrder: 5 },
+      { id: 'x', sortOrder: 1 },
+      { id: 'y', sortOrder: 3 },
+    ]);
+    // The values used are exactly {1,3,5} — nothing leaks onto other slots.
+    expect([...next.values()].sort((a, b) => a - b)).toEqual([1, 3, 5]);
   });
 });
