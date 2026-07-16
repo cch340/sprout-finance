@@ -154,7 +154,6 @@ export function CarryForwardDialog({
           date: `${targetMonth}-${String(day).padStart(2, '0')}`,
           payer: t.payer,
           dir: t.dir,
-          status: t.status,
         };
       });
     const n = await carryForward(drafts);

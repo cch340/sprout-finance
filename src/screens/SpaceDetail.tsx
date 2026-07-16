@@ -3,7 +3,6 @@ import type { CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Amount,
-  Badge,
   Button,
   Card,
   CategoryIcon,
@@ -18,7 +17,7 @@ import {
   Select,
   Tag,
 } from '../design-system';
-import type { BadgeTone, IconName } from '../design-system';
+import type { IconName } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import type { Category, RecurringItem, Space, Tx } from '../domain/types';
 import { fundBalance, incomeOf, leftThisMonth, OTHER_CATEGORY, resolveCatKey, secondaryFields, spentOf, spentOfPersonal } from '../domain/selectors';
@@ -49,35 +48,6 @@ function subtitleFor(space: Space, t: Tx): string {
   ]
     .filter(Boolean)
     .join(' · ');
-}
-
-function statusTone(s?: Tx['status']): BadgeTone {
-  return s === 'paid' ? 'income' : s === 'due' ? 'warning' : 'neutral';
-}
-
-function statusMeta(t: Tx) {
-  // Activity rows show the year — a space's ledger can span multiple years.
-  if (!t.status) return shortDate(t.date, undefined, true);
-  // A 'due' bill folds the date into its badge ("Due 3 Jun 2026"). A 'paid' bill
-  // has no date in its label, so pair the badge with the date underneath —
-  // otherwise paid entries (common in shared spaces) show no date without opening detail.
-  if (t.status === 'paid') {
-    return (
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-        <Badge tone={statusTone(t.status)} dot>
-          Paid
-        </Badge>
-        <span style={{ font: 'var(--font-caption)', color: 'var(--text-muted)' }}>
-          {shortDate(t.date, undefined, true)}
-        </span>
-      </span>
-    );
-  }
-  return (
-    <Badge tone={statusTone(t.status)} dot>
-      {`Due ${shortDate(t.date, undefined, true)}`}
-    </Badge>
-  );
 }
 
 // ---- budget dialog -------------------------------------------------------
@@ -742,7 +712,7 @@ function ActivityPanel({ space, desktop }: { space: Space; desktop: boolean }) {
               trailing={
                 <Amount value={t.amount} kind={t.dir === 'in' ? 'in' : 'neutral'} showSign={t.dir === 'in'} />
               }
-              meta={statusMeta(t)}
+              meta={shortDate(t.date, undefined, true)}
               onClick={() => openEntryDetail(t.id)}
               divider={i < shown.length - 1}
             />

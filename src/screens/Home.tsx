@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Amount,
   Avatar,
-  Badge,
   Card,
   CategoryIcon,
   Icon,
@@ -101,11 +100,6 @@ function useHomeData() {
     .sort(byDateDesc)
     .slice(0, 6);
 
-  const bills = txs
-    .filter((t) => t.status && (t.spaceId === 'housing' || t.spaceId === 'car'))
-    .slice()
-    .sort(byDateDesc);
-
   return {
     snapshot,
     month,
@@ -116,7 +110,6 @@ function useHomeData() {
     fund,
     invest,
     recent,
-    bills,
     txs,
     spaces,
   };
@@ -260,12 +253,6 @@ function spaceTile(icon: IconName) {
   );
 }
 
-function billBadge(t: Tx): ReactNode {
-  if (t.status === 'paid') return <Badge tone="income" dot>Paid</Badge>;
-  if (t.status === 'due') return <Badge tone="warning" dot>{`Due ${shortDate(t.date)}`}</Badge>;
-  return shortDate(t.date);
-}
-
 // ============================================================
 // MOBILE HOME
 // ============================================================
@@ -356,7 +343,7 @@ function MobileHome() {
 // ============================================================
 function DesktopOverview() {
   const navigate = useNavigate();
-  const { recent, bills, spaces } = useHomeData();
+  const { recent, spaces } = useHomeData();
 
   return (
     <>
@@ -365,47 +352,25 @@ function DesktopOverview() {
         <BalanceCards column />
       </div>
 
-      <div className="row-2">
-        <div>
-          <SectionHead title="Recent · Everyday Expenses" action="Open" onAction={() => navigate('/spaces/expenses')} />
-          <Card padding="sm">
-            {recent.length === 0 ? (
-              <EmptyLine>No entries yet</EmptyLine>
-            ) : (
-              recent.map((e, i) => (
-                <ListRow
-                  key={e.id}
-                  leading={<CategoryIcon category={e.cat} icon={catIconOf(spaces, e.spaceId, e.cat)} />}
-                  title={e.title}
-                  subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
-                  trailing={<Amount value={e.amount} />}
-                  meta={shortDate(e.date)}
-                  divider={i < recent.length - 1}
-                />
-              ))
-            )}
-          </Card>
-        </div>
-        <div>
-          <SectionHead title="Bills & installments" action="Housing" onAction={() => navigate('/spaces/housing')} />
-          <Card padding="sm">
-            {bills.length === 0 ? (
-              <EmptyLine>No bills yet</EmptyLine>
-            ) : (
-              bills.map((c, i) => (
-                <ListRow
-                  key={c.id}
-                  leading={<CategoryIcon category={c.cat} icon={catIconOf(spaces, c.spaceId, c.cat)} />}
-                  title={c.title}
-                  subtitle={`Paid by ${c.payer || 'Unspecified'}`}
-                  trailing={<Amount value={c.amount} />}
-                  meta={billBadge(c)}
-                  divider={i < bills.length - 1}
-                />
-              ))
-            )}
-          </Card>
-        </div>
+      <div>
+        <SectionHead title="Recent · Everyday Expenses" action="Open" onAction={() => navigate('/spaces/expenses')} />
+        <Card padding="sm">
+          {recent.length === 0 ? (
+            <EmptyLine>No entries yet</EmptyLine>
+          ) : (
+            recent.map((e, i) => (
+              <ListRow
+                key={e.id}
+                leading={<CategoryIcon category={e.cat} icon={catIconOf(spaces, e.spaceId, e.cat)} />}
+                title={e.title}
+                subtitle={[e.note, e.payer].filter(Boolean).join(' · ')}
+                trailing={<Amount value={e.amount} />}
+                meta={shortDate(e.date)}
+                divider={i < recent.length - 1}
+              />
+            ))
+          )}
+        </Card>
       </div>
     </>
   );
