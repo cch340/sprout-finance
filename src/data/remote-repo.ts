@@ -37,7 +37,10 @@ function must<T>(res: { data: T; error: unknown | null }): T {
 // ---- row shapes ----------------------------------------------------------
 interface HouseholdRow {
   id: string; currency: string; onboarded: boolean; invite_code: string;
+  name: string | null;
 }
+/** A household the caller belongs to, plus their membership role. */
+export interface MembershipRow extends HouseholdRow { role: 'owner' | 'member' }
 interface PersonRow { household_id: string; id: string; name: string }
 interface SpaceRow {
   household_id: string; id: string; name: string; short: string | null; sub: string | null;
@@ -151,13 +154,22 @@ export async function joinHousehold(code: string): Promise<HouseholdRow> {
   setCurrentHousehold(row.id);
   return row;
 }
-/** The caller's household row, or null when they belong to none. */
-export async function myHousehold(): Promise<HouseholdRow | null> {
-  const data = must(await supabase.rpc('my_household'));
-  const row = (Array.isArray(data) ? data[0] : data) as HouseholdRow | undefined;
-  // A composite-returning RPC yields an all-NULL row when the caller has no
-  // household — treat a null id as "none".
-  return row && row.id ? row : null;
+/**
+ * Every household the caller belongs to (with their role), ordered by
+ * membership created_at. Empty when they belong to none.
+ */
+export async function myHouseholds(): Promise<MembershipRow[]> {
+  const data = must(await supabase.rpc('my_households'));
+  const rows = (Array.isArray(data) ? data : []) as MembershipRow[];
+  return rows.filter((r) => r && r.id);
+}
+/** Leave a household. Raises if the caller is the owner or not a member. */
+export async function leaveHousehold(householdId: string): Promise<void> {
+  must(await supabase.rpc('leave_household', { hid: householdId }));
+}
+/** Rename the active household (RLS allows any member to update). */
+export async function renameHousehold(name: string): Promise<void> {
+  must(await supabase.from('households').update({ name }).eq('id', hid()));
 }
 
 // ---- snapshot load -------------------------------------------------------
@@ -308,15 +320,12 @@ export async function saveSettings(settings: Settings): Promise<void> {
 }
 
 // ---- lifecycle -----------------------------------------------------------
-/** Delete all household DATA (not the household or its memberships). */
+/**
+ * Delete all household DATA (not the household or its memberships) and reset
+ * onboarded=false. Owner-only, enforced server-side by the RPC.
+ */
 export async function resetAll(): Promise<void> {
-  const h = hid();
-  must(await supabase.from('txs').delete().eq('household_id', h));
-  must(await supabase.from('recurring').delete().eq('household_id', h));
-  must(await supabase.from('spaces').delete().eq('household_id', h));
-  must(await supabase.from('people').delete().eq('household_id', h));
-  must(await supabase.from('settings').delete().eq('household_id', h));
-  must(await supabase.from('households').update({ onboarded: false }).eq('id', h));
+  must(await supabase.rpc('reset_household', { hid: hid() }));
 }
 
 // ---- realtime ------------------------------------------------------------
