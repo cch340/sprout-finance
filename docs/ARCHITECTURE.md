@@ -14,8 +14,14 @@ This doc is the source of truth for implementation conventions. The design spec 
   No session → Login. Session but no household → Onboarding. Session + household → the app.
 - **Households & sharing**: `create_household()` provisions a household + owner membership and a
   6-char invite code; a partner `join_household(code)` joins and immediately loads the shared
-  data. `my_household()` resolves the caller's household at boot. Onboarding's first step is a
-  choice: start a new household (the 5-step setup) or join a partner's with their invite code.
+  data. A user can belong to **many** households: `my_households()` lists them all (with the
+  caller's role) at boot, and an active-household switcher (persisted per device in
+  `localStorage`, key `sprout:activeHousehold`) picks which one is live. Households carry an
+  optional `name` (renamed via a direct `households` update); the UI falls back to member names when unset.
+  `join_household(code)` is usable any time from Settings, not just onboarding. `leave_household(id)`
+  is joiners-only (owners can't leave). `reset_household()` is owner-only. Onboarding's first step
+  is a choice: start a new household (the 5-step setup, which sets a default name from the partner
+  names) or join a partner's with their invite code.
 - **No seeding in the running app**: onboarding creates empty ledgers only. The spreadsheet seed
   (`seed-sheet.*`, `scripts/convert-sheet.py`) is retained in the repo for a future, deliberate
   import — nothing in the app calls it.
@@ -108,11 +114,12 @@ Selectors in `domain/selectors.ts` are pure `(state, args) => value`; mirror dat
 - **Repository** (`data/remote-repo.ts`, re-exported as `data/repo.ts`): the only module that
   talks to Supabase. Same surface the store already used (`loadSnapshot`, `addTx`/`addTxs`,
   `applyEntryUpdate`, `deleteTxs`, `addSpace`/`updateSpace`/`deleteSpace`, recurring CRUD,
-  `saveHousehold`, `saveSettings`, `resetAll`, `createHousehold`/`joinHousehold`/`myHousehold`,
-  `subscribeRealtime`, `newId`). The active `household_id` is a module-level value set at boot.
+  `saveHousehold`, `saveSettings`, `resetAll`, `createHousehold`/`joinHousehold`/`myHouseholds`/
+  `leaveHousehold`/`renameHousehold`, `subscribeRealtime`, `newId`). The active `household_id` is
+  a module-level value set at boot and re-pointed by the switcher (`setCurrentHousehold`).
   Entry + fund-mirror ops are single calls (`.insert([a,b])`, `.delete().in('id',[…])`).
 - **Store** (`store/useAppStore.ts`): holds the in-memory snapshot. `boot()` — paint the Dexie
-  cache instantly (with a `syncing` flag) → `getSession()` → `my_household()` → `loadHousehold()`
+  cache instantly (with a `syncing` flag) → `getSession()` → `my_households()` → `loadHousehold()`
   (fetch snapshot, persist to cache, start realtime). Mutations write the cloud first; only on
   success do they update the snapshot and re-persist the cache; on failure they revert (skip the
   update) and toast offline. Gate flags `authed` / `hasHousehold` / `offline` drive routing in
