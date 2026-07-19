@@ -23,26 +23,31 @@ export class SproutDB extends Dexie {
     this.version(2).stores({
       cache: 'id',
     });
+    // v3: multi-household support — cache rows are now keyed by household id
+    // instead of a single fixed 'snapshot' row. The schema string is unchanged
+    // ('id' PK); the v2 single-row cache simply becomes stale, so clear it on
+    // upgrade to avoid a mismatched row ever being read as a household snapshot.
+    this.version(3).stores({
+      cache: 'id',
+    }).upgrade((tx) => tx.table('cache').clear());
   }
 }
 
 export const db = new SproutDB();
 
-const CACHE_ID = 'snapshot';
-
-/** Persist the latest cloud snapshot for instant boot next time. Best-effort. */
-export async function saveCache(snapshot: Snapshot): Promise<void> {
+/** Persist a household's cloud snapshot for instant boot next time. Best-effort. */
+export async function saveCache(householdId: string, snapshot: Snapshot): Promise<void> {
   try {
-    await db.cache.put({ id: CACHE_ID, snapshot });
+    await db.cache.put({ id: householdId, snapshot });
   } catch {
     /* cache is best-effort; ignore quota / private-mode failures */
   }
 }
 
-/** Read the cached snapshot, or null when none / unavailable. */
-export async function loadCache(): Promise<Snapshot | null> {
+/** Read a household's cached snapshot, or null when none / unavailable. */
+export async function loadCache(householdId: string): Promise<Snapshot | null> {
   try {
-    const row = await db.cache.get(CACHE_ID);
+    const row = await db.cache.get(householdId);
     return row?.snapshot ? normalizeSnapshot(row.snapshot) : null;
   } catch {
     return null;

@@ -47,6 +47,7 @@ export function Onboarding() {
   const saveHousehold = useAppStore((s) => s.saveHousehold);
   const saveSettings = useAppStore((s) => s.saveSettings);
   const createHousehold = useAppStore((s) => s.createHousehold);
+  const renameHousehold = useAppStore((s) => s.renameHousehold);
   const joinHousehold = useAppStore((s) => s.joinHousehold);
   const loadHousehold = useAppStore((s) => s.loadHousehold);
   const currency = useAppStore((s) => s.snapshot.household.currency);
@@ -105,6 +106,15 @@ export function Onboarding() {
 
       // Provision the household in the cloud (sets the active context).
       await createHousehold();
+
+      // Best-effort default name from the partner names (mirrors how the
+      // people fall back to 'You' / 'Partner' when a field is left blank).
+      const defaultName = p2.trim() ? `${people[0].name} & ${people[1].name}` : people[0].name;
+      try {
+        await renameHousehold(defaultName);
+      } catch {
+        // A rename failure must not abort onboarding — the household still works.
+      }
 
       // Create chosen shared spaces (empty ledgers, budgets from step 4).
       let order = 0;

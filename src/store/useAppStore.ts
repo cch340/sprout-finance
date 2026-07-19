@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import * as repo from '../data/repo';
-import type { RealtimeTable } from '../data/remote-repo';
+import type { MembershipRow, RealtimeTable } from '../data/remote-repo';
 import { supabase } from '../data/supabase';
 import { clearCache, loadCache, saveCache } from '../data/db';
 import { formatMoney, isoMonth } from '../domain/format';
@@ -65,6 +65,32 @@ export interface EntryEdit {
 
 const TOAST_MS = 3200;
 
+// Which household the user last had active — restored on next boot.
+const ACTIVE_KEY = 'sprout:activeHousehold';
+function readActiveId(): string | null {
+  try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; }
+}
+function writeActiveId(id: string): void {
+  try { localStorage.setItem(ACTIVE_KEY, id); } catch { /* private mode: ignore */ }
+}
+function clearActiveId(): void {
+  try { localStorage.removeItem(ACTIVE_KEY); } catch { /* private mode: ignore */ }
+}
+
+/** Derive the active-household fields (id, invite code, role, name) from the list. */
+function activeFields(
+  list: MembershipRow[],
+  activeId: string | null,
+): Pick<AppState, 'householdId' | 'inviteCode' | 'role' | 'householdName'> {
+  const active = list.find((h) => h.id === activeId) ?? null;
+  return {
+    householdId: active?.id ?? null,
+    inviteCode: active?.invite_code ?? null,
+    role: active?.role ?? null,
+    householdName: active?.name ?? null,
+  };
+}
+
 const EMPTY_SNAPSHOT: Snapshot = {
   spaces: [],
   txs: [],
@@ -94,6 +120,12 @@ export interface AppState {
   /** Active household id + invite code (for "Invite partner"). */
   householdId: string | null;
   inviteCode: string | null;
+  /** Every household the signed-in user belongs to (with their role). */
+  households: MembershipRow[];
+  /** Caller's role in the ACTIVE household. */
+  role: 'owner' | 'member' | null;
+  /** Name of the ACTIVE household (nullable). */
+  householdName: string | null;
 
   // UI / dialog state
   addEntryOpen: boolean;
@@ -114,6 +146,12 @@ export interface AppState {
   createHousehold: () => Promise<void>;
   /** Onboarding: join a partner's household by invite code, then load it. */
   joinHousehold: (code: string) => Promise<void>;
+  /** Switch the active household (paints its cache, then loads it). No-op if already active or unknown. */
+  switchHousehold: (id: string) => Promise<void>;
+  /** Leave a household. Switches to another or drops to Onboarding when it was the active one. */
+  leaveHousehold: (id: string) => Promise<void>;
+  /** Rename the active household (cloud-first). */
+  renameHousehold: (name: string) => Promise<void>;
   /** Load the active household's snapshot, cache it, and start realtime sync. */
   loadHousehold: () => Promise<void>;
   /**
@@ -193,6 +231,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   email: null,
   householdId: null,
   inviteCode: null,
+  households: [],
+  role: null,
+  householdName: null,
 
   addEntryOpen: false,
   addEntrySpaceId: null,
@@ -203,8 +244,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   async boot() {
     set({ status: 'loading', month: isoMonth(new Date()) });
-    // Instant paint from the boot cache while we authenticate + fetch.
-    const cached = await loadCache();
+    // Instant paint from the boot cache for the last-active household while we
+    // authenticate + fetch. Skip the paint when no household was ever active.
+    const storedActiveId = readActiveId();
+    const cached = storedActiveId ? await loadCache(storedActiveId) : null;
     if (cached) {
       initTheme(cached.settings.theme);
       set({ snapshot: cached, syncing: true });
@@ -217,6 +260,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({
         status: 'ready', authed: false, hasHousehold: false, syncing: false,
         offline: false, email: null, householdId: null, inviteCode: null,
+        households: [], role: null, householdName: null,
         snapshot: EMPTY_SNAPSHOT,
       });
       return;
@@ -224,16 +268,24 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ authed: true, email: session.user.email ?? null });
 
     try {
-      const hh = await repo.myHousehold();
-      if (!hh) {
-        set({ status: 'ready', hasHousehold: false, syncing: false, offline: false });
+      const list = await repo.myHouseholds();
+      if (list.length === 0) {
+        set({
+          status: 'ready', hasHousehold: false, syncing: false, offline: false,
+          households: [], role: null, householdName: null,
+        });
         return;
       }
-      repo.setCurrentHousehold(hh.id);
-      set({ householdId: hh.id, inviteCode: hh.invite_code });
+      // Restore the last-active household when it's still one we belong to,
+      // otherwise fall back to the first (most-recently-joined ordering).
+      const active = list.find((h) => h.id === storedActiveId) ?? list[0];
+      writeActiveId(active.id);
+      repo.setCurrentHousehold(active.id);
+      set({ households: list, ...activeFields(list, active.id) });
       await get().loadHousehold();
     } catch {
-      // Network / cloud failure: fall back to cached data read-only if we have it.
+      // Network / cloud failure: fall back to the cached snapshot painted for
+      // storedActiveId (read-only) if we have it.
       if (cached) {
         set({ status: 'ready', hasHousehold: true, syncing: false, offline: true });
         get().showToast('Offline — showing your last synced data');
@@ -245,7 +297,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   async loadHousehold() {
     const snapshot = await repo.loadSnapshot();
-    await saveCache(snapshot);
+    const activeId = repo.getCurrentHousehold();
+    if (activeId) await saveCache(activeId, snapshot);
     initTheme(snapshot.settings.theme);
     set({
       snapshot, status: 'ready', hasHousehold: true, syncing: false, offline: false,
@@ -264,7 +317,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ syncing: true });
     try {
       const snapshot = await repo.loadSnapshot();
-      await saveCache(snapshot);
+      const activeId = repo.getCurrentHousehold();
+      if (activeId) await saveCache(activeId, snapshot);
       set({ snapshot, syncing: false, offline: false });
       // A suspended socket may be dead — teardown + resubscribe.
       startRealtime();
@@ -287,21 +341,89 @@ export const useAppStore = create<AppState>((set, get) => ({
     await supabase.auth.signOut();
     await clearCache();
     repo.setCurrentHousehold(null);
+    clearActiveId();
     set({
       status: 'ready', authed: false, hasHousehold: false, syncing: false, offline: false,
       email: null, householdId: null, inviteCode: null, snapshot: EMPTY_SNAPSHOT,
+      households: [], role: null, householdName: null,
     });
   },
 
   async createHousehold() {
     const row = await repo.createHousehold();
-    set({ householdId: row.id, inviteCode: row.invite_code });
+    const list = await repo.myHouseholds();
+    writeActiveId(row.id);
+    repo.setCurrentHousehold(row.id);
+    set({ households: list, ...activeFields(list, row.id) });
   },
 
   async joinHousehold(code) {
     const row = await repo.joinHousehold(code);
-    set({ householdId: row.id, inviteCode: row.invite_code });
+    const list = await repo.myHouseholds();
+    writeActiveId(row.id);
+    repo.setCurrentHousehold(row.id);
+    set({ households: list, ...activeFields(list, row.id) });
     await get().loadHousehold();
+  },
+
+  async switchHousehold(id) {
+    const s = get();
+    if (id === s.householdId) return;
+    if (!s.households.some((h) => h.id === id)) return;
+    const prevId = s.householdId;
+    teardownRealtime();
+    // Paint the target's cached snapshot if we have one; otherwise keep the
+    // current snapshot visible. Either way flag syncing until the cloud load lands.
+    const targetCache = await loadCache(id);
+    if (targetCache) {
+      initTheme(targetCache.settings.theme);
+      set({ snapshot: targetCache, syncing: true });
+    } else {
+      set({ syncing: true });
+    }
+    try {
+      repo.setCurrentHousehold(id);
+      writeActiveId(id);
+      set({ ...activeFields(get().households, id) });
+      await get().loadHousehold();
+    } catch {
+      // Restore the previous active household and its realtime subscription.
+      repo.setCurrentHousehold(prevId);
+      if (prevId) writeActiveId(prevId);
+      set({ ...activeFields(get().households, prevId), syncing: false });
+      if (prevId) startRealtime();
+      get().showToast("Couldn't switch — you're offline");
+    }
+  },
+
+  async leaveHousehold(id) {
+    // Let repo errors (e.g. owner-cannot-leave) propagate to the caller UI.
+    await repo.leaveHousehold(id);
+    const remaining = get().households.filter((h) => h.id !== id);
+    const wasActive = get().householdId === id;
+    set({ households: remaining });
+    if (!wasActive) return;
+    if (remaining.length > 0) {
+      await get().switchHousehold(remaining[0].id);
+    } else {
+      teardownRealtime();
+      repo.setCurrentHousehold(null);
+      clearActiveId();
+      set({
+        hasHousehold: false, snapshot: EMPTY_SNAPSHOT, syncing: false, offline: false,
+        householdId: null, inviteCode: null, role: null, householdName: null,
+      });
+    }
+  },
+
+  async renameHousehold(name) {
+    // Cloud-first: let errors propagate so the UI can surface them.
+    await repo.renameHousehold(name);
+    const id = get().householdId;
+    set({
+      householdName: name,
+      households: get().households.map((h) => (h.id === id ? { ...h, name } : h)),
+    });
   },
 
   async resetAll() {
@@ -619,7 +741,8 @@ async function guardWrite(get: Get, fn: () => Promise<void>): Promise<boolean> {
 function commitSnapshot(get: Get, set: Set, patch: Partial<Snapshot>): void {
   const snapshot = { ...get().snapshot, ...patch };
   set({ snapshot });
-  void saveCache(snapshot);
+  const activeId = repo.getCurrentHousehold();
+  if (activeId) void saveCache(activeId, snapshot);
 }
 
 // ---- realtime partner sync -----------------------------------------------
