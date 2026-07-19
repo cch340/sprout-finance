@@ -10,6 +10,7 @@ import {
 } from '../design-system';
 import { useAppStore } from '../store/useAppStore';
 import { isoToday } from '../domain/format';
+import { evalExpression, hasOperator } from '../domain/calc';
 import { categoriesWithOther, resolveCatKey } from '../domain/selectors';
 import type { FieldDef, Space, TxDir } from '../domain/types';
 
@@ -232,8 +233,24 @@ export function AddEntryDialog() {
     return [{ value: '', label: 'Not specified' }, ...persons, ...funds];
   }, [people, spaces]);
 
-  const amountNum = parseFloat(amount) || 0;
+  // The amount field doubles as a mini calculator: users may type an expression
+  // like "12.50 + 5" and we evaluate it (null → invalid, treated as 0 on save).
+  const amountEval = evalExpression(amount);
+  const amountNum = amountEval ?? 0;
+  const amountIsExpr = hasOperator(amount);
   const amountInvalid = showError && amountNum <= 0;
+  // Live "= 37.50" preview while typing an expression (hint hides when errored).
+  const amountHint = amountIsExpr
+    ? amountEval !== null
+      ? `= ${amountEval.toFixed(2)}`
+      : 'Incomplete expression'
+    : undefined;
+  // On blur/Enter, fold a valid expression down to its rounded numeric result.
+  const commitAmount = () => {
+    if (amountIsExpr && amountEval !== null) {
+      setAmount(String(Math.round(amountEval * 100) / 100));
+    }
+  };
 
   const save = async () => {
     if (amountNum <= 0) {
@@ -334,6 +351,11 @@ export function AddEntryDialog() {
                 setAmount(e.target.value);
                 if (showError) setShowError(false);
               }}
+              onBlur={commitAmount}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitAmount();
+              }}
+              hint={amountHint}
               error={amountInvalid ? 'Enter an amount greater than 0' : undefined}
             />
           </div>
